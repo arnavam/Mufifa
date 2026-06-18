@@ -19,11 +19,11 @@ export async function getTournamentAnalytics() {
   let bestTeam = null
   
   if (leaderboard && leaderboard.length > 0) {
-    const totalAccuracy = leaderboard.reduce((sum, entry) => sum + (Number(entry.accuracy_percentage) || 0), 0)
+    const totalAccuracy = leaderboard.reduce((sum, entry: any) => sum + (Number(entry.accuracy_percentage) || 0), 0)
     avgAccuracy = totalAccuracy / leaderboard.length
     
     // Best team is the one with highest score
-    const topEntry = [...leaderboard].sort((a, b) => Number(b.total_score) - Number(a.total_score))[0]
+    const topEntry: any = [...leaderboard].sort((a: any, b: any) => Number(b.total_score) - Number(a.total_score))[0]
     
     if (topEntry) {
       const { data: teamData } = await supabase.from('teams').select('team_name').eq('id', topEntry.team_id).single()
@@ -36,7 +36,7 @@ export async function getTournamentAnalytics() {
   const championDist: Record<string, number> = {}
   
   if (champPreds) {
-    champPreds.forEach(pred => {
+    champPreds.forEach((pred: any) => {
       const champ = pred.champion
       championDist[champ] = (championDist[champ] || 0) + 1
     })
@@ -63,7 +63,7 @@ export async function getTournamentAnalytics() {
   ]
 
   if (leaderboard) {
-    leaderboard.forEach(entry => {
+    leaderboard.forEach((entry: any) => {
       const acc = Number(entry.accuracy_percentage) || 0
       const index = Math.min(Math.floor(acc / 10), 9) // cap at 9 for 100%
       bins[index].count++
@@ -91,8 +91,8 @@ export async function getComparisonData(teamAId: string, teamBId: string) {
 
   if (!teams || teams.length !== 2) return null
 
-  const t1 = teams[0]
-  const t2 = teams[1]
+  const t1: any = teams[0]
+  const t2: any = teams[1]
 
   // Structure for radar chart
   const categories = [
