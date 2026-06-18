@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Font */
+  --font-sans: 'Outfit', sans-serif;
+  
+  /* Keyframes */
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-pulse-neon: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  @keyframes glow {
+    from { box-shadow: 0 0 10px -5px var(--accent); }
+    to { box-shadow: 0 0 20px 5px var(--accent); }
+  }
+  
+  @keyframes pulse-neon {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; box-shadow: 0 0 15px var(--accent); }
+  }
+}
+
+:root {
+  /* Default to dark mode colors since app is dark-first */
+  --background: #0B0F1A;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #22C55E;
+  --primary-foreground: #022c22;
+  --secondary: #3B82F6;
+  --secondary-foreground: #eff6ff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #22C55E;
+  --accent-foreground: #022c22;
+  --destructive: #EF4444;
+  --destructive-foreground: #fef2f2;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #22C55E;
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Same colors for explicit dark mode */
+  --background: #0B0F1A;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #22C55E;
+  --primary-foreground: #022c22;
+  --secondary: #3B82F6;
+  --secondary-foreground: #eff6ff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #22C55E;
+  --accent-foreground: #022c22;
+  --destructive: #EF4444;
+  --destructive-foreground: #fef2f2;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #22C55E;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  @apply bg-card/60 backdrop-blur-md border border-border/50 shadow-lg;
+}
+
+/* Neon utilities */
+.neon-text-green {
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+.neon-border-green {
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.3), inset 0 0 10px rgba(34, 197, 94, 0.1);
+}

@@ -1,0 +1,50 @@
+import { TournamentStage } from '@/types/database'
+
+export const TOURNAMENT_STAGES: { value: TournamentStage; label: string; defaultMultiplier: number }[] = [
+  { value: 'group_stage', label: 'Group Stage', defaultMultiplier: 1.0 },
+  { value: 'round_of_32', label: 'Round of 32', defaultMultiplier: 1.5 },
+  { value: 'round_of_16', label: 'Round of 16', defaultMultiplier: 2.0 },
+  { value: 'quarter_final', label: 'Quarter Final', defaultMultiplier: 2.5 },
+  { value: 'semi_final', label: 'Semi Final', defaultMultiplier: 3.0 },
+  { value: 'third_place', label: 'Third Place Play-off', defaultMultiplier: 3.0 },
+  { value: 'final', label: 'Final', defaultMultiplier: 4.0 },
+]
+
+export const CSV_COLUMNS = [
+  'match_id',
+  'home_team',
+  'away_team',
+  'predicted_winner',
+  'predicted_home_score',
+  'predicted_away_score',
+  'predicted_extra_time_home',
+  'predicted_extra_time_away',
+  'predicted_penalty_home',
+  'predicted_penalty_away',
+  'predicted_goal_scorers',
+  'predicted_first_goal_scorer',
+  'predicted_possession_home',
+  'predicted_possession_away',
+  'predicted_shots_home',
+  'predicted_shots_away',
+  'predicted_xg_home',
+  'predicted_xg_away',
+  'predicted_yellow_home',
+  'predicted_yellow_away',
+  'predicted_red_home',
+  'predicted_red_away',
+  'confidence',
+  'tournament_champion'
+]
+
+export const MATCH_ID_PATTERN = /^(GS|R32|R16|QF|SF|TP|F)_[0-9]{3}$/
+
+export const SCORING_TOLERANCES = {
+  possession: 5,
+  shots: 2,
+  xg: 0.5,
+  yellowCards: 1,
+}
+
+export const CONFIDENCE_MIN = 0
+export const CONFIDENCE_MAX = 100
