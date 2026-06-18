@@ -47,31 +47,29 @@
 }
 
 :root {
-  /* Default to dark mode colors since app is dark-first */
-  --background: #0B0F1A;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
-  --primary: #22C55E;
-  --primary-foreground: #022c22;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
   --secondary: #3B82F6;
-  --secondary-foreground: #eff6ff;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #22C55E;
-  --accent-foreground: #022c22;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #16a34a;
+  --accent-foreground: #ffffff;
   --destructive: #EF4444;
   --destructive-foreground: #fef2f2;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #22C55E;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #16a34a;
   --radius: 0.5rem;
 }
 
 .dark {
-  /* Same colors for explicit dark mode */
   --background: #0B0F1A;
   --foreground: #f8fafc;
   --card: #111827;
@@ -105,15 +103,18 @@
   }
 }
 
-/* Glassmorphism utility */
+/* Glassmorphism/UI Panel utility */
 .glass-panel {
-  @apply bg-card/60 backdrop-blur-md border border-border/50 shadow-lg;
+  @apply bg-card border border-border shadow-sm rounded-xl;
+}
+.dark .glass-panel {
+  @apply bg-card/60 backdrop-blur-md border-border/50 shadow-lg;
 }
 
-/* Neon utilities */
-.neon-text-green {
+/* Neon utilities (disabled in light mode) */
+.dark .neon-text-green {
   text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
-.neon-border-green {
+.dark .neon-border-green {
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.3), inset 0 0 10px rgba(34, 197, 94, 0.1);
 }

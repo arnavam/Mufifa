@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Trophy, LayoutDashboard, UploadCloud, ShieldAlert, LogOut } from 'lucide-react'
 import { signOut } from '@/actions/auth'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export async function Navbar() {
   const supabase = await createClient()
@@ -46,6 +47,7 @@ export async function Navbar() {
         </div>
 
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
           {user ? (
             <form action={signOut}>
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">

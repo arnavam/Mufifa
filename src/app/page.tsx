@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/set-state-in-effect */
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Trophy, UploadCloud, BrainCircuit, BarChart3 } from 'lucide-react'
+import { Trophy, FileSpreadsheet, BrainCircuit, BarChart3, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function Home() {
@@ -12,47 +9,39 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
       {/* Hero Section */}
-      <section className="relative flex-1 flex flex-col items-center justify-center text-center px-4 py-20 lg:py-32 overflow-hidden">
-        
-        {/* Animated Background */}
-        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-30">
-          <div className="w-[800px] h-[800px] bg-accent/20 rounded-full blur-[100px] animate-[pulse-neon_4s_ease-in-out_infinite]" />
-        </div>
-
-        <div className="relative z-10 max-w-4xl mx-auto space-y-8 animate-[slide-up_0.8s_ease-out]">
-          <div className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-sm font-medium text-accent backdrop-blur-sm">
-            <Trophy className="mr-2 h-4 w-4" /> The Ultimate Prediction Challenge
+      <section className="border-b border-border bg-muted/30">
+        <div className="container mx-auto px-4 py-20 lg:py-32 max-w-5xl text-center space-y-8">
+          <div className="inline-flex items-center rounded-full border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground shadow-sm">
+            <Trophy className="mr-2 h-4 w-4 text-primary" /> The Official 2026 Challenge
           </div>
           
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-            Predict the Future of <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary animate-pulse">
-              Football with AI
-            </span>
+          <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl text-foreground">
+            µFifa '26 Machine Learning <br/>
+            <span className="text-primary">Prediction Challenge</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Join the µFifa '26 Challenge. Build your machine learning model, submit your predictions for all 104 matches, and compete on the global leaderboard.
+          <p className="mx-auto max-w-3xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
+            Welcome to the ultimate test of predictive modeling. Build your machine learning algorithms, forecast the outcomes of all 104 matches of the FIFA World Cup 2026, and compete on the global leaderboard for predictive supremacy.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
             {user ? (
               <Link href="/dashboard">
-                <Button size="lg" className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90 neon-border-green px-8">
-                  Go to Dashboard
+                <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-8">
+                  Go to Dashboard <ChevronRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
             ) : (
               <>
                 <Link href="/register">
-                  <Button size="lg" className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90 neon-border-green px-8">
-                    Start Predicting
+                  <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-8">
+                    Register Your Team
                   </Button>
                 </Link>
                 <Link href="/leaderboard">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-border/50 bg-background/50 backdrop-blur hover:bg-muted/50 px-8">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto px-8">
                     View Leaderboard
                   </Button>
                 </Link>
@@ -62,37 +51,103 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="bg-card/30 border-t border-border/50 backdrop-blur-md py-24">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass-panel p-8 rounded-2xl border-border/50 hover:border-accent/50 transition-colors">
-              <div className="h-12 w-12 rounded-lg bg-accent/20 flex items-center justify-center mb-6 neon-box-green">
-                <BrainCircuit className="h-6 w-6 text-accent" />
+      {/* About The Competition */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">About the Competition</h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              The FIFA World Cup 2026 is the largest in history, expanding to 48 teams and 104 matches. Your task is to accurately predict the entire tournament.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="space-y-6">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold">1. Data Collection & Training</h3>
+                  <p className="mt-2 text-muted-foreground leading-relaxed">
+                    Participants are encouraged to gather historical FIFA match data, player statistics, Elo ratings, and environmental factors to train robust Machine Learning models.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3">Build Your Model</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Train your ML models using historical FIFA data. Predict match outcomes, exact scorelines, goal scorers, and advanced match statistics.
-              </p>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold">2. Generate Predictions</h3>
+                  <p className="mt-2 text-muted-foreground leading-relaxed">
+                    Run your models to generate predictions for all 104 matches. You must predict the exact scoreline, match outcome, expected goals (xG), ball possession, and goal scorers.
+                  </p>
+                </div>
+              </div>
             </div>
             
-            <div className="glass-panel p-8 rounded-2xl border-border/50 hover:border-secondary/50 transition-colors">
-              <div className="h-12 w-12 rounded-lg bg-secondary/20 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                <UploadCloud className="h-6 w-6 text-secondary" />
+            <div className="space-y-6">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold">3. Standardized Submission</h3>
+                  <p className="mt-2 text-muted-foreground leading-relaxed">
+                    Download our official CSV template. Map your model's outputs to our standardized schema and upload the final CSV via your dashboard before the tournament begins.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3">Lock Submissions</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Download our standardized CSV template, format your predictions, and upload them through our secure, automated validation pipeline before kickoff.
+              <div className="flex items-start">
+                <div className="flex-shrink-0 mt-1">
+                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold">4. Live Evaluation</h3>
+                  <p className="mt-2 text-muted-foreground leading-relaxed">
+                    As real-world matches conclude, the Admin panel will log the official results. The scoring engine will instantly evaluate your predictions and update your ranking on the Global Leaderboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Scoring Rules Section */}
+      <section className="py-24 bg-muted/30 border-t border-border">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Comprehensive Scoring System</h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Our automated engine awards points based on precision. Knockout stage matches automatically receive an increasing points multiplier.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+              <h3 className="font-bold text-lg mb-2">1. Match Outcome</h3>
+              <p className="text-sm text-muted-foreground">
+                Correctly predicting the winner or a draw yields the baseline points. This is the foundation of your score.
               </p>
             </div>
-            
-            <div className="glass-panel p-8 rounded-2xl border-border/50 hover:border-orange-500/50 transition-colors">
-              <div className="h-12 w-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-6 shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                <BarChart3 className="h-6 w-6 text-orange-500" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Climb the Ranks</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                As real-world matches conclude, our engine automatically scores your predictions based on a complex weighting system. Watch your rank update live.
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+              <h3 className="font-bold text-lg mb-2">2. Exact Scoreline</h3>
+              <p className="text-sm text-muted-foreground">
+                Bonus points are awarded for predicting the exact number of goals scored by both the home and away teams.
+              </p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+              <h3 className="font-bold text-lg mb-2">3. Goal Scorers</h3>
+              <p className="text-sm text-muted-foreground">
+                Correctly naming players who score in the match grants significant bonus points per accurate player prediction.
+              </p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+              <h3 className="font-bold text-lg mb-2">4. Match Stats</h3>
+              <p className="text-sm text-muted-foreground">
+                Predicting possession within a 5% margin and Expected Goals (xG) within 0.5 awards deep-analytics points.
               </p>
             </div>
           </div>

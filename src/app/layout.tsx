@@ -12,26 +12,30 @@ export const metadata: Metadata = {
   description: "The ultimate machine learning prediction challenge for the FIFA World Cup 2026",
 };
 
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} font-sans antialiased min-h-screen bg-background text-foreground selection:bg-accent/30 flex flex-col`}>
-        <Navbar />
-        <main className="flex-1 relative z-10">
-          {children}
-        </main>
-        <Footer />
-        <Toaster theme="dark" position="bottom-right" />
-        
-        {/* Global decorative background layer */}
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent/5 blur-[120px]"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px]"></div>
-        </div>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <Navbar />
+          <main className="flex-1 relative z-10">
+            {children}
+          </main>
+          <Footer />
+          <Toaster theme="system" position="bottom-right" />
+          
+          {/* Global decorative background layer */}
+          <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent/5 blur-[120px]"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/5 blur-[120px]"></div>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
