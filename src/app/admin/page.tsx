@@ -85,7 +85,7 @@ export default async function AdminPage() {
             <Link href="/admin/matches" className="w-full block">
               <Button variant="outline" className="w-full">View All Matches</Button>
             </Link>
-          </CardContent>>
+          </CardContent>
         </Card>
 
         <Card className="glass-panel border-border/50">

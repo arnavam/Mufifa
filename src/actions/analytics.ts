@@ -105,9 +105,7 @@ export async function getComparisonData(teamAId: string, teamBId: string) {
     { key: 'confidence_score', label: 'Confidence' }
   ]
 
-  // @ts-expect-error - Supabase type nested relation
   const nameA = t1.id === teamAId ? t1.teams.team_name : t2.teams.team_name
-  // @ts-expect-error - type check limit
   const nameB = t1.id === teamBId ? t1.teams.team_name : t2.teams.team_name
 
   const dataA = t1.id === teamAId ? t1 : t2
