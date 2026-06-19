@@ -20,7 +20,6 @@ export function useRealtimeResults() {
           table: 'actual_results',
         },
         (payload) => {
-          console.log('Realtime update received on actual_results:', payload)
           toast.success('A match result was just updated! Leaderboard is refreshing...', {
             description: 'The scoring engine has recalculated the scores.',
           })

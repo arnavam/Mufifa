@@ -30,9 +30,21 @@ export default async function AdminLayout({
         <AdminSidebar />
       </div>
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 md:hidden border-b border-border/50">
-          {/* Mobile menu trigger could go here, but for now we just show a simplified version */}
-          <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Admin Panel</span>
+        <div className="p-4 md:hidden border-b border-border/50 overflow-x-auto">
+          <nav className="flex items-center gap-2 min-w-max">
+            {[
+              { name: 'Overview', href: '/admin' },
+              { name: 'Matches', href: '/admin/matches' },
+              { name: 'Results', href: '/admin/results' },
+              { name: 'Scoring', href: '/admin/scoring' },
+              { name: 'Users', href: '/admin/users' },
+              { name: 'Logs', href: '/admin/logs' },
+            ].map((item) => (
+              <a key={item.href} href={item.href} className="text-xs font-semibold text-muted-foreground hover:text-accent px-3 py-1.5 rounded-full border border-border/50 whitespace-nowrap transition-colors">
+                {item.name}
+              </a>
+            ))}
+          </nav>
         </div>
         {children}
       </main>

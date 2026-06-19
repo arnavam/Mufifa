@@ -22,7 +22,6 @@ export function useRealtimeLeaderboard() {
           table: 'leaderboard'
         },
         (payload) => {
-          console.log('Leaderboard updated via realtime:', payload)
           setIsUpdating(true)
           
           // Refresh the current route to fetch new data
