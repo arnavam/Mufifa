@@ -7,6 +7,11 @@ import { redirect } from 'next/navigation'
 export async function signUp(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const full_name = formData.get('full_name') as string
+  const phone_number = formData.get('phone_number') as string
+  const college = formData.get('college') as string
+  const district = formData.get('district') as string
+
   const supabase = await createClient()
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://mufifa-gules.vercel.app'
   const { error } = await supabase.auth.signUp({
@@ -14,6 +19,12 @@ export async function signUp(formData: FormData) {
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
+      data: {
+        full_name,
+        phone_number,
+        college,
+        district,
+      }
     },
   })
 
