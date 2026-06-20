@@ -19,6 +19,10 @@ export default async function SubmitPage() {
 
   const data = await getMySubmission()
 
+  if (data?.team?.submission_locked) {
+    redirect('/dashboard')
+  }
+
   return (
     <div className="container max-w-4xl py-10 mx-auto px-4">
       <div className="mb-8">
