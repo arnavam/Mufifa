@@ -110,15 +110,22 @@ export default async function Home(props: { searchParams?: SearchParams }) {
                 <div>
                   <h4 className="font-bold text-lg mb-1 text-foreground">Earn MuLearn Karma Points</h4>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    Participants who submit their machine learning notebook and prediction methodology in the MuLearn Discord community will receive MuLearn Karma Points.
+                    This competition is part of the MuLearn ecosystem. Participants who submit their ML notebook, methodology, and final predictions in the MuLearn Discord community will receive MuLearn Karma Points.
                   </p>
                 </div>
               </div>
-              <Button asChild className="shrink-0 shadow-sm">
-                <Link href="https://mulearn.org/" target="_blank" rel="noopener noreferrer">
-                  Join MuLearn
-                </Link>
-              </Button>
+              <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
+                <Button asChild className="w-full shadow-sm">
+                  <Link href="https://mulearn.org/" target="_blank" rel="noopener noreferrer">
+                    Join MuLearn
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full shadow-sm bg-transparent border-primary/30 hover:bg-primary/10">
+                  <Link href="https://discord.gg/mulearn" target="_blank" rel="noopener noreferrer">
+                    Join Discord
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
 
