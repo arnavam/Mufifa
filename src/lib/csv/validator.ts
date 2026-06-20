@@ -198,12 +198,12 @@ export function validateCsv(
     // Possession validation (must sum to 100)
     const possHome = parseFloat(row.predicted_possession_home)
     const possAway = parseFloat(row.predicted_possession_away)
-    if (Math.abs(possHome + possAway - 100) > 0.1) {
+    if (Number((possHome + possAway).toFixed(2)) !== 100) {
       result.valid = false
       result.errors.push({
         row: rowNumber,
         column: 'predicted_possession_home/away',
-        message: `Possession must sum to 100. Got ${possHome} + ${possAway}`
+        message: `Possession must sum strictly to 100. Got ${possHome} + ${possAway}`
       })
     }
 

@@ -19,7 +19,7 @@ export function useRealtimeResults() {
           schema: 'public',
           table: 'actual_results',
         },
-        (payload) => {
+        () => {
           toast.success('A match result was just updated! Leaderboard is refreshing...', {
             description: 'The scoring engine has recalculated the scores.',
           })

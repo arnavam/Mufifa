@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { getAuditLogs } from '@/actions/admin/audit'
 import { Metadata } from 'next'
 import { LogsClient } from './logs-client'

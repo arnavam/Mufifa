@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAdminData, adminRecalculateAll } from '@/actions/admin'
+import { getAdminData } from '@/actions/admin'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Users, FileSpreadsheet, RefreshCw, Settings, ShieldAlert } from 'lucide-react'
-import { revalidatePath } from 'next/cache'
+import { Users, FileSpreadsheet, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { RecalculateButton } from './recalculate-button'
 
@@ -12,7 +11,7 @@ export default async function AdminPage() {
   let data
   try {
     data = await getAdminData()
-  } catch (e) {
+  } catch {
     return (
       <div className="container mx-auto py-20 text-center">
         <ShieldAlert className="w-16 h-16 mx-auto text-destructive mb-4" />

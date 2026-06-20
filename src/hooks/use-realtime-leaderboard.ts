@@ -21,7 +21,7 @@ export function useRealtimeLeaderboard() {
           schema: 'public',
           table: 'leaderboard'
         },
-        (payload) => {
+        () => {
           setIsUpdating(true)
           
           // Refresh the current route to fetch new data

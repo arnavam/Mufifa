@@ -33,22 +33,34 @@ export function calculateOutcomeScore(prediction: Prediction, actual: Actual, ru
   return { points: 0, type: 'none' }
 }
 
+function getFinalScore(record: { home_score: number | null, away_score: number | null, extra_time_home: number | null, extra_time_away: number | null }) {
+  if (record.extra_time_home !== null && record.extra_time_away !== null) {
+    return { home: record.extra_time_home, away: record.extra_time_away }
+  }
+  return { home: record.home_score, away: record.away_score }
+}
+
 export function calculateScorelineScore(prediction: Prediction, actual: Actual, rules: Record<string, ScoringRule>) {
   if (prediction.home_score === null || prediction.away_score === null || 
       actual.home_score === null || actual.away_score === null) return 0
 
-  if (prediction.home_score === actual.home_score && prediction.away_score === actual.away_score) {
+  const pScore = getFinalScore(prediction)
+  const aScore = getFinalScore(actual)
+  
+  if (pScore.home === null || pScore.away === null || aScore.home === null || aScore.away === null) return 0
+
+  if (pScore.home === aScore.home && pScore.away === aScore.away) {
     return rules['exact_scoreline']?.points || 0
   }
 
-  const predDiff = prediction.home_score - prediction.away_score
-  const actualDiff = actual.home_score - actual.away_score
+  const predDiff = pScore.home - pScore.away
+  const actualDiff = aScore.home - aScore.away
 
   if (predDiff === actualDiff) {
     return rules['correct_goal_difference']?.points || 0
   }
 
-  if (prediction.home_score === actual.home_score || prediction.away_score === actual.away_score) {
+  if (pScore.home === aScore.home || pScore.away === aScore.away) {
     return rules['one_team_score_correct']?.points || 0
   }
 
@@ -59,8 +71,10 @@ export function calculateScorerScore(prediction: Prediction, actual: Actual, rul
   let points = 0
   if (!prediction.goal_scorers || !actual.goal_scorers) return 0
 
-  const predScorers = prediction.goal_scorers as GoalScorer[]
-  const actualScorers = actual.goal_scorers as GoalScorer[]
+  const isOwnGoal = (name: string) => name.toLowerCase().includes('own goal') || name.toLowerCase() === 'og'
+  
+  const predScorers = (prediction.goal_scorers as GoalScorer[]).filter(s => !isOwnGoal(s.name))
+  const actualScorers = (actual.goal_scorers as GoalScorer[]).filter(s => !isOwnGoal(s.name))
   const actualPlayerNames = actualScorers.map(s => s.name)
 
   let allPerfect = true

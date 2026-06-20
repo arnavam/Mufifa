@@ -130,7 +130,7 @@ export default async function Home(props: { searchParams?: SearchParams }) {
               { step: '3', title: 'Submit Predictions', desc: 'Upload the official CSV. Only ONE final submission allowed. Permanently locked.', icon: Lock },
               { step: '4', title: 'Tournament Begins', desc: 'Organizers enter actual results. The engine evaluates predictions automatically.', icon: Globe },
               { step: '5', title: 'Climb Leaderboard', desc: 'Scores recalculate after every match. Track ranking, accuracy, and analytics.', icon: Trophy },
-            ].map((item, i) => (
+            ].map((item) => (
               <Card key={item.step} className="relative bg-background border-border shadow-sm hover:shadow-md transition-shadow group">
                 <CardHeader className="pb-4">
                   <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

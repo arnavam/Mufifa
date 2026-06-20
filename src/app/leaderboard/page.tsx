@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 }
 
 export default async function LeaderboardPage() {
-  const { rows, totalCount } = await getLeaderboard(1, 100)
+  const { rows } = await getLeaderboard(1, 100)
 
   // Top 3 for podium
   const top3 = rows.slice(0, 3)

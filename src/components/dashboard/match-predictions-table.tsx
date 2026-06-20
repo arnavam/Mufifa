@@ -86,6 +86,7 @@ export function MatchPredictionsTable({ data }: MatchPredictionsTableProps) {
     },
   ]
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

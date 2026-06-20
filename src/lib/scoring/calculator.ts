@@ -15,14 +15,20 @@ export async function recalculateAll() {
   }
 
   // Rank assignment
-  const { data: leaderboard } = await supabase
+  const { data: leaderboardData } = await supabase
     .from('leaderboard')
-    .select('*')
-    .order('total_score', { ascending: false })
-    .order('accuracy_percentage', { ascending: false })
-    .order('winner_score', { ascending: false })
+    .select('*, teams(submissions(locked_at))')
 
-  if (leaderboard) {
+  if (leaderboardData) {
+    const leaderboard = leaderboardData.sort((a, b) => {
+      if (b.total_score !== a.total_score) return Number(b.total_score) - Number(a.total_score)
+      if (b.accuracy_percentage !== a.accuracy_percentage) return Number(b.accuracy_percentage) - Number(a.accuracy_percentage)
+      if (b.winner_score !== a.winner_score) return Number(b.winner_score) - Number(a.winner_score)
+      
+      const aTime = new Date((a as any).teams?.submissions?.[0]?.locked_at || Date.now()).getTime()
+      const bTime = new Date((b as any).teams?.submissions?.[0]?.locked_at || Date.now()).getTime()
+      return aTime - bTime
+    })
     const updates = leaderboard.map((entry, index) => ({
       id: entry.id,
       team_id: entry.team_id,
@@ -56,14 +62,20 @@ export async function recalculateForMatch(matchId: string) {
   }
 
   // Update ranks
-  const { data: leaderboard } = await supabase
+  const { data: leaderboardData } = await supabase
     .from('leaderboard')
-    .select('*')
-    .order('total_score', { ascending: false })
-    .order('accuracy_percentage', { ascending: false })
-    .order('winner_score', { ascending: false })
+    .select('*, teams(submissions(locked_at))')
 
-  if (leaderboard) {
+  if (leaderboardData) {
+    const leaderboard = leaderboardData.sort((a, b) => {
+      if (b.total_score !== a.total_score) return Number(b.total_score) - Number(a.total_score)
+      if (b.accuracy_percentage !== a.accuracy_percentage) return Number(b.accuracy_percentage) - Number(a.accuracy_percentage)
+      if (b.winner_score !== a.winner_score) return Number(b.winner_score) - Number(a.winner_score)
+      
+      const aTime = new Date((a as any).teams?.submissions?.[0]?.locked_at || Date.now()).getTime()
+      const bTime = new Date((b as any).teams?.submissions?.[0]?.locked_at || Date.now()).getTime()
+      return aTime - bTime
+    })
     const updates = leaderboard.map((entry, index) => ({
       id: entry.id,
       team_id: entry.team_id,

@@ -5,15 +5,30 @@ import { parseCsvText } from '@/lib/csv/parser'
 import { validateCsv } from '@/lib/csv/validator'
 import { generateTemplate } from '@/lib/csv/template-generator'
 import { revalidatePath } from 'next/cache'
+import { globalRateLimiter } from '@/lib/rate-limit'
 
 export async function uploadSubmission(formData: FormData) {
   const file = formData.get('file') as File
   if (!file) return { error: 'No file provided' }
   
+  if (file.type !== 'text/csv' && file.type !== 'application/vnd.ms-excel') {
+    return { error: 'Invalid file type. Only CSV files are allowed.' }
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: 'File size exceeds 5MB limit.' }
+  }
+  
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+
+  // Rate limiting: max 5 requests per 1 minute per user
+  const { success } = globalRateLimiter.check(`upload_${user.id}`, 5, 60 * 1000)
+  if (!success) {
+    return { error: 'Too many upload attempts. Please try again later.' }
+  }
 
   // Get user's team
   const { data: team } = await supabase
@@ -30,7 +45,7 @@ export async function uploadSubmission(formData: FormData) {
   // Parse
   const { rows, errors: parseErrors } = parseCsvText(text)
   if (parseErrors.length > 0) {
-    return { validationResult: { valid: false, errors: parseErrors.map((e, i) => ({ row: 0, column: 'file', message: e })), predictions: [], champion: '' } }
+    return { validationResult: { valid: false, errors: parseErrors.map((e) => ({ row: 0, column: 'file', message: e })), predictions: [], champion: '' } }
   }
 
   // Fetch valid matches
@@ -54,7 +69,8 @@ export async function uploadSubmission(formData: FormData) {
   }
 
   // Upload to storage
-  const filePath = `${team.id}/${Date.now()}_${file.name}`
+  const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+  const filePath = `${team.id}/${Date.now()}_${safeFilename}`
   const { error: uploadError } = await supabase.storage
     .from('prediction-files')
     .upload(filePath, file)
@@ -70,8 +86,7 @@ export async function uploadSubmission(formData: FormData) {
   const { data: allMatches } = await supabase.from('matches').select('id, match_code')
   const matchMap = new Map((allMatches || []).map(m => [m.match_code, m.id]))
 
-  const predictionInserts = validationResult.predictions.map(p => ({
-    team_id: team.id,
+  const predictions = validationResult.predictions.map(p => ({
     match_id: matchMap.get(p.match_id)!,
     winner: p.winner,
     home_score: p.home_score,
@@ -95,31 +110,15 @@ export async function uploadSubmission(formData: FormData) {
     confidence: p.confidence
   }))
 
-  const { error: predictionError } = await supabase.from('predictions').insert(predictionInserts)
-  if (predictionError) return { error: 'Failed to save predictions: ' + predictionError.message }
-
-  // Insert champion
-  if (validationResult.champion) {
-    await supabase.from('champion_predictions').insert({
-      team_id: team.id,
-      champion: validationResult.champion
-    })
-  }
-
-  // Record successful submission
-  await supabase.from('submissions').insert({
-    team_id: team.id,
-    file_path: filePath,
-    file_name: file.name,
-    is_valid: true,
-    locked_at: new Date().toISOString()
+  const { error: rpcError } = await supabase.rpc('submit_predictions', {
+    p_team_id: team.id,
+    p_file_path: filePath,
+    p_file_name: file.name,
+    p_champion: validationResult.champion || null,
+    p_predictions: predictions
   })
 
-  // Lock team
-  await supabase.from('teams').update({ submission_locked: true }).eq('id', team.id)
-  
-  // Setup initial leaderboard entry
-  await supabase.from('leaderboard').insert({ team_id: team.id })
+  if (rpcError) return { error: 'Failed to save predictions: ' + rpcError.message }
 
   // Log audit
   await supabase.from('audit_logs').insert({
@@ -186,6 +185,12 @@ export async function createTeam(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+
+  // Rate limiting: max 3 requests per 5 minutes per user
+  const { success } = globalRateLimiter.check(`createTeam_${user.id}`, 3, 5 * 60 * 1000)
+  if (!success) {
+    return { error: 'Too many team creation attempts. Please try again later.' }
+  }
 
   const { error } = await supabase.from('teams').insert({
     owner_id: user.id,
