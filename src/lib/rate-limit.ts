@@ -34,6 +34,7 @@ export class RateLimit {
     if (!limiter) {
       limiter = new Ratelimit({
         redis: this.redis,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         limiter: Ratelimit.slidingWindow(limit, `${windowSecs} s` as any),
         ephemeralCache: new Map(),
       })

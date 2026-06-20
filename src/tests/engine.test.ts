@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest'
-import { calculatePenaltyScore, calculateStatsScore, calculateChampionScore, calculateScorerScore } from '../lib/scoring/engine'
+import { calculatePenaltyScore, calculateStatsScore, calculateChampionScore } from '../lib/scoring/engine'
 
 describe('Scoring Engine Extended (QA Tests)', () => {
   const rules = {

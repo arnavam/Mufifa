@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest'
 import { validateCsv } from '../lib/csv/validator'
 import { parseGoalScorers } from '../lib/csv/parser'
