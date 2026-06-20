@@ -37,7 +37,7 @@ Run this checklist to verify production readiness:
 
 **Phase B: Match Result Entry**
 1. Navigate to `/admin/results`.
-2. Locate a match (e.g., Match `M1`: France vs Brazil).
+2. Locate a match (e.g., Match `GS_001`: Team A1 vs Team A2).
 3. Input `Home Score: 2` and `Away Score: 1`.
 4. Click **Submit Result**.
 5. Assert the Match UI badge turns green (`Result Entered`).

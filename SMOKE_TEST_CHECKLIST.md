@@ -16,7 +16,7 @@ Execution of this checklist MUST be completed manually on the actual Production 
 
 ## Phase 3: Core Loop Execution
 - [ ] **Admin Login**: Navigate to `/admin/results`. Assert the page does not redirect you to `/login`.
-- [ ] **Result Entry**: Input the actual scoreline for Match `M1` (e.g. France 2 - 1 Brazil).
+- [ ] **Result Entry**: Input the actual scoreline for Match `GS_001` (e.g. Team A1 2 - 1 Team A2).
 - [ ] **Score Recalculation**: View the Vercel Function logs to ensure the Edge Recalculation trigger successfully fired.
 - [ ] **Leaderboard Update**: Assert your team received points in the database.
 - [ ] **Analytics Update**: Check if Tournament Champion distribution counts updated in `analytics_cache`.
