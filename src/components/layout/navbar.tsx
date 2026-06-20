@@ -78,10 +78,8 @@ export async function Navbar() {
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
           <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-5 h-5" />
-              </Button>
+            <SheetTrigger render={<Button variant="ghost" size="icon" />}>
+              <Menu className="w-5 h-5" />
             </SheetTrigger>
             <SheetContent side="right" className="flex flex-col gap-4">
               <Link href="/" className="flex items-center space-x-2 mb-8">
