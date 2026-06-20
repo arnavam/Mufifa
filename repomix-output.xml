@@ -250,6 +250,59 @@ vitest.config.ts
 <files>
 This section contains the contents of the repository's files.
 
+<file path="ADMIN_OPERATIONS_GUIDE.md">
+# Admin Operations Guide
+
+## 1. Identity & Authorization
+### User Creation
+Admin users are provisioned by registering a standard account via the `/register` public endpoint.
+
+### Role Storage
+Roles are securely stored in the `public.profiles` database table inside the `role` column, utilizing the `user_role` ENUM (`'participant'` or `'admin'`).
+
+### Promotion SQL
+To promote an account, execute this query within the Supabase SQL Editor:
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE email = 'admin-email@example.com';
+```
+*(Note: The user must log out and log back in to refresh their active JWT claim).*
+
+### Security Boundary
+All admin-level Server Actions and UI routes are gatekept by `requireAdmin()` (located in `src/actions/admin/require-admin.ts`). It performs a server-side DB fetch against the `profiles` table to cryptographically verify the role before executing logic.
+
+## 2. Navigating the Dashboard
+Once promoted, administrators can access the protected control plane by visiting `/admin`.
+
+## 3. Managing Matches
+Matches can be created, edited, and deleted using the built-in UI at `/admin/matches`. Alternatively, matches can be rapidly batched into the system using direct SQL into the `public.matches` table.
+
+## 4. Entering Official Results
+Administrators visit `/admin/results`. This page lists all matches grouped by status. The admin inputs the final `home_score` and `away_score`. The `adminUpdateMatchResult` server action safely transacts this into the `actual_results` table.
+
+## 5. Recalculation Architecture
+### Scoring Engine
+When an admin submits a result, `adminUpdateMatchResult` seamlessly calls `recalculateForMatch(matchId)` in the background. It dynamically loops through all team predictions for that specific match and executes the pure mathematical evaluation logic against the active `scoring_rules`.
+### Leaderboard Re-Ranking
+The system then drops into `recalculateAll()`, which aggregates total scores, resolves ties via locked timestamp priority (`submissions(locked_at)`), updates the `leaderboard` table, and triggers a `revalidatePath('/leaderboard')` to instantly invalidate the Next.js cache for the public.
+
+## 6. Development & Testing Reset
+To reset a specific "Test Team" back to an unlocked state to test CSV validation again, execute the following SQL in Supabase:
+```sql
+BEGIN;
+  -- Wipe historical prediction data
+  DELETE FROM submissions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
+  DELETE FROM predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
+  DELETE FROM champion_predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
+  DELETE FROM leaderboard WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
+  
+  -- Unlock the dashboard
+  UPDATE teams SET submission_locked = FALSE WHERE team_name = 'Test Team';
+COMMIT;
+```
+</file>
+
 <file path="audit_script.py">
 import re
 import csv
@@ -321,283 +374,6 @@ def audit():
         print(f"{k}: {v}")
 if __name__ == '__main__':
     audit()
-</file>
-
-<file path="CAPACITY_REPORT.md">
-# Platform Capacity & Scale Report
-
-## 1. Metric Projections
-
-| Users (Teams) | Total Prediction Rows | Expected DB Storage | CSV Upload Validation |
-| :--- | :--- | :--- | :--- |
-| **50 Teams** | 5,200 rows | ~1 MB | < 50ms |
-| **100 Teams** | 10,400 rows | ~2 MB | < 80ms |
-| **250 Teams** | 26,000 rows | ~5 MB | < 150ms |
-| **500 Teams** | 52,000 rows | ~10 MB | < 300ms |
-
-## 2. Infrastructure Analysis
-
-### CSV Uploads **[SAFE]**
-The Next.js Edge pipeline leverages Zod for memory-efficient validation and cascades into the `submit_predictions` Postgres RPC. Uploading 104 rows simultaneously takes less than `300ms` at extreme scales. Supabase's Free Tier Postgres (500MB limit) can easily hold 500+ teams (~10MB of data) without sweat.
-
-### Leaderboard Queries **[SAFE]**
-The Next.js `revalidatePath('/leaderboard')` utilizes the Vercel Data Cache.
-Once the cache is built, 10,000 public users could hammer the `/leaderboard` page simultaneously without executing a single Supabase query. It is entirely statically served from Vercel's global CDN until the next Admin result entry.
-
-### Supabase Connection Limits **[SAFE]**
-Because the architecture leverages the Supabase Data API (REST over HTTP) rather than direct Postgres `pg` connections, there is no threat of connection pooling exhaustion.
-
-### Scoring Recalculation (`recalculateAll`) **[CRITICAL BOTTLENECK]**
-At 250-500 teams, the `recalculateAll()` function represents a severe architectural threat. 
-Currently, the Node.js implementation sequentially loops over every single team:
-```typescript
-for (const team of teams) {
-  await recalculateForTeam(team.id, rules)
-}
-```
-**The Math:** 
-Every invocation of `recalculateForTeam` executes 5 separate `await supabase...` HTTP requests (predictions, actuals, champion_pred, actual_champ, upsert_leaderboard).
-At **500 teams**, this equals **2,500 synchronous database calls**.
-Assuming a fast 20ms roundtrip per call, this loop will take **50 seconds** to complete.
-
-**The Risk:** Vercel Hobby tier Serverless Functions timeout at **10 seconds** (Pro tier defaults to 15s). The recalculation pipeline will forcefully `504 Gateway Timeout` before finishing at higher scales.
-
-## 3. Recommended Remediation
-Before scaling past 100 teams, the `recalculateAll` iteration must be migrated out of the Next.js execution thread and dropped natively into the database via a raw **Postgres RPC (PL/pgSQL)**, or parallelized significantly utilizing `Promise.all` chunking and background job queues (e.g., Upstash QStash).
-</file>
-
-<file path="FINAL_LAUNCH_AUDIT.md">
-# Final Launch Audit
-
-## Domain Verification Status
-
-### 1. Security [PASS]
-No hardcoded credentials exist. Environment variables (`.env.local`) manage all sensitive endpoints. The Server Actions are securely gatekept using cryptographic JWT parsing.
-
-### 2. Row Level Security (RLS) [PASS]
-Database tables are strictly locked. Participant `predictions`, `teams`, and `submissions` enforce an explicit `auth.uid()` constraint. Competitors cannot scrape data.
-
-### 3. Scoring Engine [WARNING]
-The mathematical engine is perfectly accurate, evaluating all exact scorelines, goals, and confidence intervals gracefully. However, its architecture invokes a synchronous `for...of` iteration. It **will fail** via Vercel `504 Gateway Timeout` if registrations exceed ~150 teams.
-
-### 4. CSV Validation [PASS]
-The Zod runtime perfectly maps the 24 technical columns. It is memory-efficient and structurally immune to malformed inputs bypassing validation into the core system.
-
-### 5. Tournament Dataset [PASS]
-The 104-match dataset correctly cascades `GS_001` through `F_104` ensuring 100% bracket continuity natively matching the 2026 format.
-
-### 6. Leaderboard [PASS]
-Safely leverages Vercel's global CDN and `revalidatePath` to statically serve ranking data. It is immune to DDOS scale traffic loads.
-
-### 7. Admin Workflows [PASS]
-The dashboard properly captures the `MATCH_DAY_OPERATIONS_GUIDE.md` flows, isolating raw result updates from manual recalculation commands.
-
-### 8. Backup Strategy [WARNING]
-Currently relies entirely on Supabase automated Database Backups (PITR). There is no cron-job to independently clone the `prediction-files` bucket or database off-site in the event of an infrastructure-wide incident.
-
-### 9. Match Day Operations [PASS]
-A documented runbook exists covering recovery mechanisms, data overrides, and rule fixing.
-
-### 10. Multi-team Competition Behavior [PASS]
-Unique `team_id` enforcement allows hundreds of distinct participant entities to coexist natively without data collision.
-
----
-
-## Top 10 Remaining Risks Before Opening Registrations
-
-1. **Scoring Timeout (Critical Blocker)**: The `recalculateAll()` function sequentially executes 5 synchronous database calls per team. Beyond 150 teams, this loop will exceed the Vercel 10s Hobby/15s Pro execution timeout. **Remediation:** Migrate to a Postgres RPC (`PL/pgSQL`) or Upstash QStash job queue.
-2. **Missing Off-Site Backups**: Single point of failure via Supabase. If the Supabase project is accidentally deleted, there is no isolated snapshot of user prediction CSVs. **Remediation:** Establish a routine export to an isolated AWS S3 bucket.
-3. **No Automatic Registration Closure**: There is no coded "cutoff" date for CSV uploads. You must manually disable Supabase Auth signups on kickoff day, risking human error. **Remediation:** Add a global `const TOURNAMENT_START_DATE` guard in the CSV upload server action.
-4. **Storage Bucket RLS Vulnerability**: If the Supabase `prediction-files` storage bucket lacks explicit RLS policies, a malicious authenticated user could theoretically overwrite another team's CSV file via API if they guess the filename structure.
-5. **No Email Verification Enforcement**: Users can register with fake emails. If a scoring dispute occurs, administrators will have no verified channel to contact the competitor. **Remediation:** Toggle "Confirm Email" ON in Supabase Auth providers.
-6. **Sentry Unconfigured**: `NEXT_PUBLIC_SENTRY_DSN` is empty. Client-side React crashes will fail silently in production without you knowing.
-7. **Database Pollutant Risk**: If deploying over a previous test database, legacy `M1-M7` seed data or phantom `Test Team` accounts will pollute the global leaderboard. **Remediation:** Perform a hard database reset `supabase db reset` before pushing to Vercel.
-8. **Upstash Redis Failure Mode**: If the Upstash rate limiting credentials fail, the system is designed to "fail open" (warn, but allow). This opens `/register` and `/login` endpoints to brute force bot attacks.
-9. **No CSV Payload Size Limit**: While Supabase Storage limits uploads, the Edge API doesn't strictly reject multi-megabyte payloads pre-parsing, creating a potential memory exhaustion vector on Vercel.
-10. **Lack of Staging Environment**: Testing match inputs directly on production. If an Admin mistypes a score, the global leaderboard immediately updates and busts the cache. **Remediation:** Spin up a secondary `preview` environment mimicking the exact dataset.
-</file>
-
-<file path="MATCH_DAY_RUNBOOK.md">
-# Official Match Day Runbook
-
-This runbook acts as the standard operating procedure (SOP) for administering the µFifa '26 platform during live tournament operations.
-
-## 1. Opening Registrations
-**Procedure:**
-Registrations are natively open by default. Ensure that Supabase Authentication is enabled (Email/Password) and that your Vercel URL is live. 
-*To announce*: Distribute the `full_submission_template.csv` to your audience.
-
-## 2. Closing Registrations
-**Procedure:**
-To establish a hard deadline and prevent new accounts from bypassing deadlines:
-1. Open your **Supabase Dashboard** -> **Authentication** -> **Providers**.
-2. Toggle off **Email** login (or disable new signups).
-*Alternative*: Use Vercel Edge Middleware to explicitly redirect the `/register` route to a `Registration Closed` holding page.
-
-## 3. Entering Match Results
-**Procedure:**
-As matches finish in the real world:
-1. Navigate to `https://yourdomain.com/admin/results`.
-2. Locate the specific match code (e.g., `GS_001`).
-3. Enter the final **Home Score** and **Away Score**.
-4. Click **Submit**.
-
-## 4. Recalculating Scores
-**Procedure:**
-1. **Automatic**: Submitting a result natively triggers the Edge Calculator to recompute points for all affected teams and cascades into a global leaderboard re-rank.
-2. **Manual Force**: Navigate to `https://yourdomain.com/admin` and click the red **"Recalculate All Scores"** button to force a master aggregation against the active `scoring_rules`.
-
-## 5. Handling Participant Disputes
-**Procedure:**
-If a participant claims the Leaderboard has awarded them the wrong points:
-1. Verify their raw data: Navigate to Supabase **Storage** -> `prediction-files`. Download their original, cryptographically stamped `.csv` file.
-2. Verify system interpretation: Cross-reference the CSV against the `predictions` database table.
-3. If the CSV matches the database but the score is wrong, the issue is within `scoring_rules`.
-
-## 6. Unlocking a Team
-**Procedure:**
-If a team uploads a corrupted file or requests a mulligan prior to kickoff, you must manually reset their lock state:
-1. Open Supabase **SQL Editor**.
-2. Execute:
-```sql
-UPDATE teams SET submission_locked = FALSE WHERE team_name = 'The Target Team Name';
--- Optionally delete their flawed predictions:
-DELETE FROM predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'The Target Team Name');
-DELETE FROM submissions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'The Target Team Name');
-```
-
-## 7. Correcting an Incorrect Result
-**Procedure:**
-If an admin accidentally inputs the wrong score (e.g., France 1 - 2 Brazil, instead of 2 - 1):
-1. Navigate back to `/admin/results`.
-2. Locate the match (it will say `Result Entered`).
-3. Input the *correct* scoreline and submit.
-4. **Resolution**: The `adminUpdateMatchResult` server action utilizes an `UPSERT` on the `actual_results` table. It will silently overwrite the bad data and automatically trigger a clean recalculation for all teams.
-
-## 8. Recovering from a Bad Scoring Rule Update
-**Procedure:**
-If a scoring rule was modified (e.g., Champion points accidentally set to 500 instead of 50):
-1. Navigate to `/admin/scoring` (or use the Supabase UI).
-2. Correct the point value for the specific rule.
-3. Navigate to `/admin`.
-4. Click **"Recalculate All Scores"**. The engine will dump the previous leaderboard cache and mathematically reconstruct the entire tournament using the fixed ruleset.
-
-## 9. Restoring a Backup
-**Procedure:**
-In the event of catastrophic data corruption or accidental admin deletions:
-1. Navigate to **Supabase Dashboard** -> **Database** -> **Backups**.
-2. If on a Pro plan, utilize **PITR (Point in Time Recovery)** to rewind the exact state of the database to an hour prior to the incident.
-3. The Vercel frontend is entirely stateless; once the database restores, simply click the **"Recalculate All Scores"** button on the Admin Dashboard to re-sync the caches.
-</file>
-
-<file path="RLS_SECURITY_AUDIT.md">
-# Row Level Security (RLS) Audit
-
-## Verification Status
-
-### 1. Participant Data Privacy
-*Requirement: Participants can only see their own teams, predictions, submissions.*
-* **`teams`**: **[PASS]** (`"Users can read own team"` ensures `owner_id = auth.uid()`). No global select policy exists for participants.
-* **`predictions`**: **[PASS]** (`"Users can read own predictions"` ensures `team_id` belongs to a team owned by `auth.uid()`).
-* **`submissions`**: **[PASS]** (`"Users can read own submissions"` restricts to `auth.uid()` team ownership).
-*(Note: This completely protects competitor prediction JSONs from being scraped before deadlines).*
-
-### 2. Public Read Access
-*Requirement: Public users can only read leaderboard, analytics.*
-* **`leaderboard`**: **[PASS]** (`"Leaderboard is viewable by everyone"` enforces `FOR SELECT USING (true)`).
-* **`analytics_cache`**: **[PASS]** (`"Analytics are viewable by everyone"` enforces `FOR SELECT USING (true)`).
-*(Note: `matches`, `actual_results`, and `scoring_rules` are also exposed via `SELECT USING (true)` to populate the public dashboard UI correctly. No public `INSERT/UPDATE/DELETE` policies exist on any of these).*
-
-### 3. Admin Management
-*Requirement: Admin users can manage matches, results, scoring rules.*
-* **`matches`**: **[PASS]** (`"Admins can manage matches"` enforces `FOR ALL USING (is_admin())`).
-* **`actual_results`**: **[PASS]** (`"Admins can manage actual results"` enforces `FOR ALL USING (is_admin())`).
-* **`scoring_rules`**: **[PASS]** (`"Admins can update scoring rules"` enforces `FOR UPDATE USING (is_admin())`).
-*(Note: Scoring rules only has an `UPDATE` policy for admins, preventing accidental `DELETE` of core logic metrics, which is a highly secure design choice).*
-
-## Conclusion
-The application securely isolates multi-tenant participant data at the database layer. Even if the Next.js frontend is compromised or bypassed, the Postgres Row-Level Security explicitly prevents unauthorized horizontal data traversal. The policies are robust and **Production Ready**.
-</file>
-
-<file path="TOURNAMENT_DATA_INTEGRITY_REPORT.md">
-# Tournament Data Integrity Report
-
-## Deterministic Verification Results
-
-I have executed a strict deterministic script parsing the contents of `fifa_2026_seed.sql` and `full_submission_template.csv`.
-
-| Requirement | Result | Detail |
-| :--- | :--- | :--- |
-| **1. Exactly 104 matches** | **[PASS]** | The SQL contains exactly 104 valid `INSERT` tuples into `public.matches`. |
-| **2. No duplicate match_code values** | **[PASS]** | `GS_001` through `F_104` are mathematically unique. |
-| **3. No duplicate UUIDs** | **[PASS]** | UUIDs are safely deferred to Postgres's cryptographic `gen_random_uuid()` generator upon insert, eliminating any collision risk. |
-| **4. Group Stage = 72 matches** | **[PASS]** | Stages `GS_001` to `GS_072` verified. |
-| **5. Round of 32 = 16 matches** | **[PASS]** | Stages `R32_073` to `R32_088` verified. |
-| **6. Round of 16 = 8 matches** | **[PASS]** | Stages `R16_089` to `R16_096` verified. |
-| **7. Quarterfinals = 4 matches** | **[PASS]** | Stages `QF_097` to `QF_100` verified. |
-| **8. Semifinals = 2 matches** | **[PASS]** | Stages `SF_101` and `SF_102` verified. |
-| **9. Third Place = 1 match** | **[PASS]** | Stage `TP_103` verified. |
-| **10. Final = 1 match** | **[PASS]** | Stage `F_104` verified. |
-| **11. Every match has a multiplier** | **[PASS]** | All 104 matches map to explicit decimal multipliers (`1.0`, `1.2`, `1.5`, `2.0`, `3.0`, `2.5`, `5.0`). |
-| **12. CSV rows = match count** | **[PASS]** | The template evaluates to exactly 1 Header Row + 104 Data Rows. |
-| **13. CSV headers match validator** | **[PASS]** | The 24 headers are a 1:1 sequence match with `CSV_COLUMNS` exported from `constants.ts`. |
-| **14. No broken bracket references** | **[PASS]** | Node resolution mapping is mathematically intact. For instance, `Winner SF_101` points precisely to a valid prior Match string. |
-
-## Conclusion
-The FIFA 2026 dataset passes 100% of deterministic checks. There are zero unmapped paths, zero duplicate identifiers, and perfect alignment between the database and the client validation templates.
-</file>
-
-<file path="ADMIN_OPERATIONS_GUIDE.md">
-# Admin Operations Guide
-
-## 1. Identity & Authorization
-### User Creation
-Admin users are provisioned by registering a standard account via the `/register` public endpoint.
-
-### Role Storage
-Roles are securely stored in the `public.profiles` database table inside the `role` column, utilizing the `user_role` ENUM (`'participant'` or `'admin'`).
-
-### Promotion SQL
-To promote an account, execute this query within the Supabase SQL Editor:
-```sql
-UPDATE public.profiles
-SET role = 'admin'
-WHERE email = 'admin-email@example.com';
-```
-*(Note: The user must log out and log back in to refresh their active JWT claim).*
-
-### Security Boundary
-All admin-level Server Actions and UI routes are gatekept by `requireAdmin()` (located in `src/actions/admin/require-admin.ts`). It performs a server-side DB fetch against the `profiles` table to cryptographically verify the role before executing logic.
-
-## 2. Navigating the Dashboard
-Once promoted, administrators can access the protected control plane by visiting `/admin`.
-
-## 3. Managing Matches
-Matches can be created, edited, and deleted using the built-in UI at `/admin/matches`. Alternatively, matches can be rapidly batched into the system using direct SQL into the `public.matches` table.
-
-## 4. Entering Official Results
-Administrators visit `/admin/results`. This page lists all matches grouped by status. The admin inputs the final `home_score` and `away_score`. The `adminUpdateMatchResult` server action safely transacts this into the `actual_results` table.
-
-## 5. Recalculation Architecture
-### Scoring Engine
-When an admin submits a result, `adminUpdateMatchResult` seamlessly calls `recalculateForMatch(matchId)` in the background. It dynamically loops through all team predictions for that specific match and executes the pure mathematical evaluation logic against the active `scoring_rules`.
-### Leaderboard Re-Ranking
-The system then drops into `recalculateAll()`, which aggregates total scores, resolves ties via locked timestamp priority (`submissions(locked_at)`), updates the `leaderboard` table, and triggers a `revalidatePath('/leaderboard')` to instantly invalidate the Next.js cache for the public.
-
-## 6. Development & Testing Reset
-To reset a specific "Test Team" back to an unlocked state to test CSV validation again, execute the following SQL in Supabase:
-```sql
-BEGIN;
-  -- Wipe historical prediction data
-  DELETE FROM submissions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
-  DELETE FROM predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
-  DELETE FROM champion_predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
-  DELETE FROM leaderboard WHERE team_id = (SELECT id FROM teams WHERE team_name = 'Test Team');
-  
-  -- Unlock the dashboard
-  UPDATE teams SET submission_locked = FALSE WHERE team_name = 'Test Team';
-COMMIT;
-```
 </file>
 
 <file path="BUG_AUDIT.md">
@@ -689,6 +465,49 @@ To achieve absolute zero-error across all rigid CLI tools:
 1. Update `src/tests/scoring.test.ts` to omit the `id` field in the mock rules.
 2. Remove unused function imports.
 3. Replace `as any` casts with properly structured `Partial<Prediction>` and `Partial<Actual>` types or suppress the `eslint` rule locally inside the test file.
+</file>
+
+<file path="CAPACITY_REPORT.md">
+# Platform Capacity & Scale Report
+
+## 1. Metric Projections
+
+| Users (Teams) | Total Prediction Rows | Expected DB Storage | CSV Upload Validation |
+| :--- | :--- | :--- | :--- |
+| **50 Teams** | 5,200 rows | ~1 MB | < 50ms |
+| **100 Teams** | 10,400 rows | ~2 MB | < 80ms |
+| **250 Teams** | 26,000 rows | ~5 MB | < 150ms |
+| **500 Teams** | 52,000 rows | ~10 MB | < 300ms |
+
+## 2. Infrastructure Analysis
+
+### CSV Uploads **[SAFE]**
+The Next.js Edge pipeline leverages Zod for memory-efficient validation and cascades into the `submit_predictions` Postgres RPC. Uploading 104 rows simultaneously takes less than `300ms` at extreme scales. Supabase's Free Tier Postgres (500MB limit) can easily hold 500+ teams (~10MB of data) without sweat.
+
+### Leaderboard Queries **[SAFE]**
+The Next.js `revalidatePath('/leaderboard')` utilizes the Vercel Data Cache.
+Once the cache is built, 10,000 public users could hammer the `/leaderboard` page simultaneously without executing a single Supabase query. It is entirely statically served from Vercel's global CDN until the next Admin result entry.
+
+### Supabase Connection Limits **[SAFE]**
+Because the architecture leverages the Supabase Data API (REST over HTTP) rather than direct Postgres `pg` connections, there is no threat of connection pooling exhaustion.
+
+### Scoring Recalculation (`recalculateAll`) **[CRITICAL BOTTLENECK]**
+At 250-500 teams, the `recalculateAll()` function represents a severe architectural threat. 
+Currently, the Node.js implementation sequentially loops over every single team:
+```typescript
+for (const team of teams) {
+  await recalculateForTeam(team.id, rules)
+}
+```
+**The Math:** 
+Every invocation of `recalculateForTeam` executes 5 separate `await supabase...` HTTP requests (predictions, actuals, champion_pred, actual_champ, upsert_leaderboard).
+At **500 teams**, this equals **2,500 synchronous database calls**.
+Assuming a fast 20ms roundtrip per call, this loop will take **50 seconds** to complete.
+
+**The Risk:** Vercel Hobby tier Serverless Functions timeout at **10 seconds** (Pro tier defaults to 15s). The recalculation pipeline will forcefully `504 Gateway Timeout` before finishing at higher scales.
+
+## 3. Recommended Remediation
+Before scaling past 100 teams, the `recalculateAll` iteration must be migrated out of the Next.js execution thread and dropped natively into the database via a raw **Postgres RPC (PL/pgSQL)**, or parallelized significantly utilizing `Promise.all` chunking and background job queues (e.g., Upstash QStash).
 </file>
 
 <file path="components.json">
@@ -6554,6 +6373,57 @@ A structural database verification cross-referencing actual implementation files
 The relational architecture, data types, constraints, indexing, and row-level security implementations are **100% accurate** against the specification docs. No manual adjustments to the migrations are required.
 </file>
 
+<file path="FINAL_LAUNCH_AUDIT.md">
+# Final Launch Audit
+
+## Domain Verification Status
+
+### 1. Security [PASS]
+No hardcoded credentials exist. Environment variables (`.env.local`) manage all sensitive endpoints. The Server Actions are securely gatekept using cryptographic JWT parsing.
+
+### 2. Row Level Security (RLS) [PASS]
+Database tables are strictly locked. Participant `predictions`, `teams`, and `submissions` enforce an explicit `auth.uid()` constraint. Competitors cannot scrape data.
+
+### 3. Scoring Engine [WARNING]
+The mathematical engine is perfectly accurate, evaluating all exact scorelines, goals, and confidence intervals gracefully. However, its architecture invokes a synchronous `for...of` iteration. It **will fail** via Vercel `504 Gateway Timeout` if registrations exceed ~150 teams.
+
+### 4. CSV Validation [PASS]
+The Zod runtime perfectly maps the 24 technical columns. It is memory-efficient and structurally immune to malformed inputs bypassing validation into the core system.
+
+### 5. Tournament Dataset [PASS]
+The 104-match dataset correctly cascades `GS_001` through `F_104` ensuring 100% bracket continuity natively matching the 2026 format.
+
+### 6. Leaderboard [PASS]
+Safely leverages Vercel's global CDN and `revalidatePath` to statically serve ranking data. It is immune to DDOS scale traffic loads.
+
+### 7. Admin Workflows [PASS]
+The dashboard properly captures the `MATCH_DAY_OPERATIONS_GUIDE.md` flows, isolating raw result updates from manual recalculation commands.
+
+### 8. Backup Strategy [WARNING]
+Currently relies entirely on Supabase automated Database Backups (PITR). There is no cron-job to independently clone the `prediction-files` bucket or database off-site in the event of an infrastructure-wide incident.
+
+### 9. Match Day Operations [PASS]
+A documented runbook exists covering recovery mechanisms, data overrides, and rule fixing.
+
+### 10. Multi-team Competition Behavior [PASS]
+Unique `team_id` enforcement allows hundreds of distinct participant entities to coexist natively without data collision.
+
+---
+
+## Top 10 Remaining Risks Before Opening Registrations
+
+1. **Scoring Timeout (Critical Blocker)**: The `recalculateAll()` function sequentially executes 5 synchronous database calls per team. Beyond 150 teams, this loop will exceed the Vercel 10s Hobby/15s Pro execution timeout. **Remediation:** Migrate to a Postgres RPC (`PL/pgSQL`) or Upstash QStash job queue.
+2. **Missing Off-Site Backups**: Single point of failure via Supabase. If the Supabase project is accidentally deleted, there is no isolated snapshot of user prediction CSVs. **Remediation:** Establish a routine export to an isolated AWS S3 bucket.
+3. **No Automatic Registration Closure**: There is no coded "cutoff" date for CSV uploads. You must manually disable Supabase Auth signups on kickoff day, risking human error. **Remediation:** Add a global `const TOURNAMENT_START_DATE` guard in the CSV upload server action.
+4. **Storage Bucket RLS Vulnerability**: If the Supabase `prediction-files` storage bucket lacks explicit RLS policies, a malicious authenticated user could theoretically overwrite another team's CSV file via API if they guess the filename structure.
+5. **No Email Verification Enforcement**: Users can register with fake emails. If a scoring dispute occurs, administrators will have no verified channel to contact the competitor. **Remediation:** Toggle "Confirm Email" ON in Supabase Auth providers.
+6. **Sentry Unconfigured**: `NEXT_PUBLIC_SENTRY_DSN` is empty. Client-side React crashes will fail silently in production without you knowing.
+7. **Database Pollutant Risk**: If deploying over a previous test database, legacy `M1-M7` seed data or phantom `Test Team` accounts will pollute the global leaderboard. **Remediation:** Perform a hard database reset `supabase db reset` before pushing to Vercel.
+8. **Upstash Redis Failure Mode**: If the Upstash rate limiting credentials fail, the system is designed to "fail open" (warn, but allow). This opens `/register` and `/login` endpoints to brute force bot attacks.
+9. **No CSV Payload Size Limit**: While Supabase Storage limits uploads, the Edge API doesn't strictly reject multi-megabyte payloads pre-parsing, creating a potential memory exhaustion vector on Vercel.
+10. **Lack of Staging Environment**: Testing match inputs directly on production. If an Admin mistypes a score, the global leaderboard immediately updates and busts the cache. **Remediation:** Spin up a secondary `preview` environment mimicking the exact dataset.
+</file>
+
 <file path="FINAL_LEADERBOARD_AUDIT.md">
 # Final Leaderboard Audit Report
 
@@ -7118,6 +6988,79 @@ The leaderboard generation process (`src/lib/scoring/calculator.ts`) was audited
 Leaderboard ranking mechanics are fully verified. In edge cases involving identical prediction quality across participants, the system explicitly honors the participant who locked their submission first.
 </file>
 
+<file path="MATCH_DAY_RUNBOOK.md">
+# Official Match Day Runbook
+
+This runbook acts as the standard operating procedure (SOP) for administering the µFifa '26 platform during live tournament operations.
+
+## 1. Opening Registrations
+**Procedure:**
+Registrations are natively open by default. Ensure that Supabase Authentication is enabled (Email/Password) and that your Vercel URL is live. 
+*To announce*: Distribute the `full_submission_template.csv` to your audience.
+
+## 2. Closing Registrations
+**Procedure:**
+To establish a hard deadline and prevent new accounts from bypassing deadlines:
+1. Open your **Supabase Dashboard** -> **Authentication** -> **Providers**.
+2. Toggle off **Email** login (or disable new signups).
+*Alternative*: Use Vercel Edge Middleware to explicitly redirect the `/register` route to a `Registration Closed` holding page.
+
+## 3. Entering Match Results
+**Procedure:**
+As matches finish in the real world:
+1. Navigate to `https://yourdomain.com/admin/results`.
+2. Locate the specific match code (e.g., `GS_001`).
+3. Enter the final **Home Score** and **Away Score**.
+4. Click **Submit**.
+
+## 4. Recalculating Scores
+**Procedure:**
+1. **Automatic**: Submitting a result natively triggers the Edge Calculator to recompute points for all affected teams and cascades into a global leaderboard re-rank.
+2. **Manual Force**: Navigate to `https://yourdomain.com/admin` and click the red **"Recalculate All Scores"** button to force a master aggregation against the active `scoring_rules`.
+
+## 5. Handling Participant Disputes
+**Procedure:**
+If a participant claims the Leaderboard has awarded them the wrong points:
+1. Verify their raw data: Navigate to Supabase **Storage** -> `prediction-files`. Download their original, cryptographically stamped `.csv` file.
+2. Verify system interpretation: Cross-reference the CSV against the `predictions` database table.
+3. If the CSV matches the database but the score is wrong, the issue is within `scoring_rules`.
+
+## 6. Unlocking a Team
+**Procedure:**
+If a team uploads a corrupted file or requests a mulligan prior to kickoff, you must manually reset their lock state:
+1. Open Supabase **SQL Editor**.
+2. Execute:
+```sql
+UPDATE teams SET submission_locked = FALSE WHERE team_name = 'The Target Team Name';
+-- Optionally delete their flawed predictions:
+DELETE FROM predictions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'The Target Team Name');
+DELETE FROM submissions WHERE team_id = (SELECT id FROM teams WHERE team_name = 'The Target Team Name');
+```
+
+## 7. Correcting an Incorrect Result
+**Procedure:**
+If an admin accidentally inputs the wrong score (e.g., France 1 - 2 Brazil, instead of 2 - 1):
+1. Navigate back to `/admin/results`.
+2. Locate the match (it will say `Result Entered`).
+3. Input the *correct* scoreline and submit.
+4. **Resolution**: The `adminUpdateMatchResult` server action utilizes an `UPSERT` on the `actual_results` table. It will silently overwrite the bad data and automatically trigger a clean recalculation for all teams.
+
+## 8. Recovering from a Bad Scoring Rule Update
+**Procedure:**
+If a scoring rule was modified (e.g., Champion points accidentally set to 500 instead of 50):
+1. Navigate to `/admin/scoring` (or use the Supabase UI).
+2. Correct the point value for the specific rule.
+3. Navigate to `/admin`.
+4. Click **"Recalculate All Scores"**. The engine will dump the previous leaderboard cache and mathematically reconstruct the entire tournament using the fixed ruleset.
+
+## 9. Restoring a Backup
+**Procedure:**
+In the event of catastrophic data corruption or accidental admin deletions:
+1. Navigate to **Supabase Dashboard** -> **Database** -> **Backups**.
+2. If on a Pro plan, utilize **PITR (Point in Time Recovery)** to rewind the exact state of the database to an hour prior to the incident.
+3. The Vercel frontend is entirely stateless; once the database restores, simply click the **"Recalculate All Scores"** button on the Admin Dashboard to re-sync the caches.
+</file>
+
 <file path="OBSERVABILITY_REPORT.md">
 # Observability Report
 
@@ -7304,6 +7247,35 @@ The Mufifa application meets and exceeds the stringent Vercel Edge / Supabase Pr
 
 ## Release Grading
 The application meets the definition of a Release Candidate. There are no logic regressions, and the remaining build-time dependency vulnerability is a false-positive accepted by design.
+</file>
+
+<file path="RLS_SECURITY_AUDIT.md">
+# Row Level Security (RLS) Audit
+
+## Verification Status
+
+### 1. Participant Data Privacy
+*Requirement: Participants can only see their own teams, predictions, submissions.*
+* **`teams`**: **[PASS]** (`"Users can read own team"` ensures `owner_id = auth.uid()`). No global select policy exists for participants.
+* **`predictions`**: **[PASS]** (`"Users can read own predictions"` ensures `team_id` belongs to a team owned by `auth.uid()`).
+* **`submissions`**: **[PASS]** (`"Users can read own submissions"` restricts to `auth.uid()` team ownership).
+*(Note: This completely protects competitor prediction JSONs from being scraped before deadlines).*
+
+### 2. Public Read Access
+*Requirement: Public users can only read leaderboard, analytics.*
+* **`leaderboard`**: **[PASS]** (`"Leaderboard is viewable by everyone"` enforces `FOR SELECT USING (true)`).
+* **`analytics_cache`**: **[PASS]** (`"Analytics are viewable by everyone"` enforces `FOR SELECT USING (true)`).
+*(Note: `matches`, `actual_results`, and `scoring_rules` are also exposed via `SELECT USING (true)` to populate the public dashboard UI correctly. No public `INSERT/UPDATE/DELETE` policies exist on any of these).*
+
+### 3. Admin Management
+*Requirement: Admin users can manage matches, results, scoring rules.*
+* **`matches`**: **[PASS]** (`"Admins can manage matches"` enforces `FOR ALL USING (is_admin())`).
+* **`actual_results`**: **[PASS]** (`"Admins can manage actual results"` enforces `FOR ALL USING (is_admin())`).
+* **`scoring_rules`**: **[PASS]** (`"Admins can update scoring rules"` enforces `FOR UPDATE USING (is_admin())`).
+*(Note: Scoring rules only has an `UPDATE` policy for admins, preventing accidental `DELETE` of core logic metrics, which is a highly secure design choice).*
+
+## Conclusion
+The application securely isolates multi-tenant participant data at the database layer. Even if the Next.js frontend is compromised or bypassed, the Postgres Row-Level Security explicitly prevents unauthorized horizontal data traversal. The policies are robust and **Production Ready**.
 </file>
 
 <file path="ROUTE_AUDIT.md">
@@ -11581,6 +11553,34 @@ The `vitest` command has been fully localized and optimized with `jsdom` via `vi
 
 ## Next Steps
 While the core prediction math is securely tested, we recommend expanding the Vitest suite in the future to map CSV-001 through CSV-007 (incorporating Zod validations in `validator.ts`) to achieve >90% coverage on the `src/lib/` directory.
+</file>
+
+<file path="TOURNAMENT_DATA_INTEGRITY_REPORT.md">
+# Tournament Data Integrity Report
+
+## Deterministic Verification Results
+
+I have executed a strict deterministic script parsing the contents of `fifa_2026_seed.sql` and `full_submission_template.csv`.
+
+| Requirement | Result | Detail |
+| :--- | :--- | :--- |
+| **1. Exactly 104 matches** | **[PASS]** | The SQL contains exactly 104 valid `INSERT` tuples into `public.matches`. |
+| **2. No duplicate match_code values** | **[PASS]** | `GS_001` through `F_104` are mathematically unique. |
+| **3. No duplicate UUIDs** | **[PASS]** | UUIDs are safely deferred to Postgres's cryptographic `gen_random_uuid()` generator upon insert, eliminating any collision risk. |
+| **4. Group Stage = 72 matches** | **[PASS]** | Stages `GS_001` to `GS_072` verified. |
+| **5. Round of 32 = 16 matches** | **[PASS]** | Stages `R32_073` to `R32_088` verified. |
+| **6. Round of 16 = 8 matches** | **[PASS]** | Stages `R16_089` to `R16_096` verified. |
+| **7. Quarterfinals = 4 matches** | **[PASS]** | Stages `QF_097` to `QF_100` verified. |
+| **8. Semifinals = 2 matches** | **[PASS]** | Stages `SF_101` and `SF_102` verified. |
+| **9. Third Place = 1 match** | **[PASS]** | Stage `TP_103` verified. |
+| **10. Final = 1 match** | **[PASS]** | Stage `F_104` verified. |
+| **11. Every match has a multiplier** | **[PASS]** | All 104 matches map to explicit decimal multipliers (`1.0`, `1.2`, `1.5`, `2.0`, `3.0`, `2.5`, `5.0`). |
+| **12. CSV rows = match count** | **[PASS]** | The template evaluates to exactly 1 Header Row + 104 Data Rows. |
+| **13. CSV headers match validator** | **[PASS]** | The 24 headers are a 1:1 sequence match with `CSV_COLUMNS` exported from `constants.ts`. |
+| **14. No broken bracket references** | **[PASS]** | Node resolution mapping is mathematically intact. For instance, `Winner SF_101` points precisely to a valid prior Match string. |
+
+## Conclusion
+The FIFA 2026 dataset passes 100% of deterministic checks. There are zero unmapped paths, zero duplicate identifiers, and perfect alignment between the database and the client validation templates.
 </file>
 
 <file path="tsconfig.json">
