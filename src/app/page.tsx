@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Trophy, ChevronRight, CheckCircle2, BrainCircuit, Target, BarChart3, Lock, Cpu, Globe, Users, HelpCircle, Phone, ArrowRight, Download, Activity } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { getLeaderboard } from '@/actions/leaderboard'
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -26,6 +27,8 @@ export default async function Home(props: { searchParams?: SearchParams }) {
 
   const { data: settings } = await supabase.from('competition_settings').select('submission_deadline').single()
   const isClosed = settings?.submission_deadline ? new Date() > new Date(settings.submission_deadline) : false
+
+  const { rows: topTeams } = await getLeaderboard(1, 5)
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/20">
@@ -319,18 +322,30 @@ export default async function Home(props: { searchParams?: SearchParams }) {
             <Card className="border-border hover:border-primary/30 transition-colors">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Globe className="w-6 h-6 text-primary" /> Public Leaderboard
+                  <Globe className="w-6 h-6 text-primary" /> Top 5 Leaderboard
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-4">
-                  {['Team Rankings', 'Total Points', 'Accuracy Percentage', 'Champion Prediction Status'].map((item) => (
-                    <li key={item} className="flex items-center gap-3 border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-4">
+                  {topTeams.length > 0 ? (
+                    topTeams.map((team, index) => (
+                      <div key={team.id} className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-lg w-6 text-muted-foreground">#{index + 1}</span>
+                          <span className="font-medium truncate max-w-[150px] sm:max-w-[200px]">{team.team_name}</span>
+                        </div>
+                        <div className="font-mono font-bold text-primary">{team.total_score} pts</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-muted-foreground text-sm italic">Leaderboard will update after matches begin.</div>
+                  )}
+                  <div className="pt-2">
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/leaderboard">View Full Leaderboard</Link>
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

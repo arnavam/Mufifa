@@ -137,15 +137,25 @@ export function SubmissionClient({ initialData }: { initialData: any }) {
               <CardTitle>Upload Predictions</CardTitle>
               <CardDescription>Upload your completed CSV template here.</CardDescription>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleDownloadTemplate} 
-              disabled={isDownloading}
-              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? 'Downloading...' : 'Get Template'}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.open('/Validation_Guide.pdf', '_blank')}
+                className="border-muted text-muted-foreground hover:bg-muted"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Validation Guide
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadTemplate} 
+                disabled={isDownloading}
+                className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Downloading...' : 'Get Template'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             

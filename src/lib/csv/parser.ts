@@ -107,17 +107,22 @@ export function parseGoalScorers(str: string): GoalScorer[] {
   if (!str || str.trim() === '') return []
   
   const scorers: GoalScorer[] = []
-  const parts = str.split(';')
+  const parts = str.split(/[;,]/)
   
   for (const part of parts) {
     if (!part.trim()) continue
     
-    const [name, countStr] = part.split(':')
-    if (name && countStr) {
-      const goals = parseInt(countStr.trim(), 10)
-      if (!isNaN(goals) && goals > 0) {
-        scorers.push({ name: name.trim(), goals })
-      }
+    const nameCount = part.split(':')
+    const name = nameCount[0].trim()
+    const countStr = nameCount[1]?.trim()
+    
+    let goals = 1
+    if (countStr) {
+      goals = parseInt(countStr, 10)
+    }
+    
+    if (name && !isNaN(goals) && goals > 0) {
+      scorers.push({ name, goals })
     }
   }
   

@@ -7,6 +7,8 @@ import { useState, useTransition } from 'react'
 import { signUp } from '@/actions/auth'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -41,7 +43,7 @@ const KERALA_DISTRICTS = [
 
 const registerSchema = z.object({
   full_name: z.string().min(2, { message: 'Full name is required.' }),
-  phone_number: z.string().min(10, { message: 'Valid phone number is required.' }),
+  phone_number: z.string().refine((val) => val && isValidPhoneNumber(val), { message: 'Valid international phone number is required.' }),
   college: z.string().min(2, { message: 'College/Organization name is required.' }),
   district: z.string().min(1, { message: 'Please select a district.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -144,7 +146,12 @@ export function RegisterForm() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="+91 9876543210" {...field} className="bg-background/50" />
+                      <PhoneInput 
+                        placeholder="+91 9876543210" 
+                        {...field} 
+                        defaultCountry="IN"
+                        className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

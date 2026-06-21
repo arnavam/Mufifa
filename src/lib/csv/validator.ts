@@ -27,7 +27,7 @@ const predictionRowSchema = z.object({
   predicted_yellow_away: z.string().regex(/^\d+$/, "Yellow cards must be a positive integer"),
   predicted_red_home: z.string().regex(/^\d+$/, "Red cards must be a positive integer"),
   predicted_red_away: z.string().regex(/^\d+$/, "Red cards must be a positive integer"),
-  confidence: z.string().regex(/^(100|[1-9]?[0-9])$/, "Confidence must be between 0 and 100"),
+  confidence: z.string().regex(/^(100|[1-9]?[0-9]|0(\.\d+)?|1(\.0+)?)$/, "Confidence must be between 0 and 100 (or 0 and 1)"),
 })
 
 const PLAYER_NAME_PATTERN = /^[A-Za-z .'-]+$/
@@ -72,17 +72,38 @@ function validateTeamName(row: CsvRow, rowNumber: number, matchRef: MatchReferen
 
 function validatePlayerNames(row: CsvRow, rowNumber: number): ValidationError[] {
   const errors: ValidationError[] = []
-  const scorerParts = row.predicted_goal_scorers
-    ? row.predicted_goal_scorers.split(';').filter(Boolean)
-    : []
+  
+  if (!row.predicted_goal_scorers) {
+    if (row.predicted_first_goal_scorer && !PLAYER_NAME_PATTERN.test(row.predicted_first_goal_scorer)) {
+      errors.push({
+        row: rowNumber,
+        column: 'predicted_first_goal_scorer',
+        message: `Invalid first goal scorer: ${row.predicted_first_goal_scorer}`
+      })
+    }
+    return errors
+  }
+
+  const scorerParts = row.predicted_goal_scorers.split(/[;,]/)
 
   scorerParts.forEach((part) => {
-    const [name, count] = part.split(':').map(value => value?.trim())
-    if (!name || !count || !/^[1-9]\d*$/.test(count)) {
+    const trimmed = part.trim()
+    if (!trimmed) {
       errors.push({
         row: rowNumber,
         column: 'predicted_goal_scorers',
-        message: `Goal scorer must use Name:Goals format. Invalid value: ${part}`
+        message: `Empty scorer entry found. Remove trailing commas or extra semicolons.`
+      })
+      return
+    }
+
+    const [name, count] = part.split(':').map(value => value?.trim())
+    
+    if (!name || (count && !/^[1-9]\d*$/.test(count))) {
+      errors.push({
+        row: rowNumber,
+        column: 'predicted_goal_scorers',
+        message: `Goal scorer format invalid. Use Name or Name:Goals. Invalid value: ${part}`
       })
       return
     }
@@ -231,7 +252,13 @@ export function validateCsv(
         yellow_away: parseInt(row.predicted_yellow_away, 10),
         red_home: parseInt(row.predicted_red_home, 10),
         red_away: parseInt(row.predicted_red_away, 10),
-        confidence: parseInt(row.confidence, 10)
+        confidence: (() => {
+          let conf = parseFloat(row.confidence)
+          if (row.confidence.includes('.') && conf <= 1) {
+            conf = Math.round(conf * 100)
+          }
+          return conf
+        })()
       })
     }
   })
