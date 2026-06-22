@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function updateTeamName(formData: FormData) {
   const teamName = formData.get('team_name') as string
-  if (!teamName || teamName.length < 3) return { error: 'Team name must be at least 3 characters' }
+  if (!teamName || teamName.length < 3) return { error: 'Nickname must be at least 3 characters' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -16,7 +16,7 @@ export async function updateTeamName(formData: FormData) {
 
   if (error) {
     if (error.code === '23505') {
-      return { error: 'This team name is already taken.' }
+      return { error: 'This nickname is already taken.' }
     }
     return { error: error.message }
   }

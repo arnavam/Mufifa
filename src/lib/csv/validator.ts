@@ -32,7 +32,8 @@ const predictionRowSchema = z.object({
 
 const PLAYER_NAME_PATTERN = /^[A-Za-z .'-]+$/
 
-function normalizedText(value: string) {
+function normalizedText(value: string | null | undefined) {
+  if (!value) return ''
   return value.trim().toLowerCase()
 }
 
@@ -60,7 +61,7 @@ function validateTeamName(row: CsvRow, rowNumber: number, matchRef: MatchReferen
   const home = normalizedText(homeTeam)
   const away = normalizedText(awayTeam)
 
-  if (winner === home || winner === away) return []
+  if (winner === home || winner === away || winner === 'home' || winner === 'away') return []
   if ((home === 'tbd' || away === 'tbd') && (validTeams.size === 0 || validTeams.has(winner))) return []
 
   return [{

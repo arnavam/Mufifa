@@ -54,7 +54,7 @@ export function LeaderboardTable({ data }: LeaderboardTableProps) {
     },
     {
       accessorKey: "team_name",
-      header: "Team Name",
+      header: "Nickname",
       cell: ({ row }) => {
         const rank = row.getValue("rank") as number | null
         const isTop3 = rank && rank <= 3

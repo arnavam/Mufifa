@@ -11,6 +11,11 @@ export async function signUp(formData: FormData) {
   const phone_number = formData.get('phone_number') as string
   const college = formData.get('college') as string
   const district = formData.get('district') as string
+  const mulearn_id = (formData.get('mulearn_id') as string)?.trim()
+
+  if (!mulearn_id || !mulearn_id.endsWith('@mulearn')) {
+    return { error: 'muLearn ID is required and must end with "@mulearn".' }
+  }
 
   const supabase = await createClient()
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://mufifa-gules.vercel.app'
@@ -24,6 +29,7 @@ export async function signUp(formData: FormData) {
         phone_number,
         college,
         district,
+        mulearn_id,
       }
     },
   })

@@ -40,7 +40,7 @@ export const columns: ColumnDef<LeaderboardRow>[] = [
   },
   {
     accessorKey: "team_name",
-    header: "Team Name",
+    header: "Nickname",
     cell: ({ row }) => {
       return <div className="font-semibold text-foreground">{row.getValue("team_name")}</div>
     },

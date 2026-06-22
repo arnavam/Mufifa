@@ -6,7 +6,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 // A minimal mock of what uploadSubmission might do internally
-async function checkDeadlineLogic(settingsRow: any) {
+async function checkDeadlineLogic(settingsRow: { submission_deadline?: string | null }) {
   if (settingsRow?.submission_deadline) {
     if (new Date() > new Date(settingsRow.submission_deadline)) {
       return { error: 'Submissions are closed. The prediction window ended when the Round of 32 began.' }

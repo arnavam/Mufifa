@@ -28,7 +28,7 @@ describe('CSV Pipeline (QA Tests)', () => {
         predicted_goal_scorers: 'Mbappe:2', predicted_first_goal_scorer: 'Mbappe',
         confidence: '90', tournament_champion: 'France', __requiresChampion: true
       }
-    ] as any
+    ] as never
 
     const result = validateCsv(rows, validMatches)
     expect(result.valid).toBe(true)
@@ -49,7 +49,7 @@ describe('CSV Pipeline (QA Tests)', () => {
         predicted_goal_scorers: 'Mbappe:2', predicted_first_goal_scorer: 'Mbappe',
         confidence: '90', tournament_champion: 'France', __requiresChampion: true
       }
-    ] as any
+    ] as never
 
     const result = validateCsv(rows, validMatches)
     expect(result.valid).toBe(false)

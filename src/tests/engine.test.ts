@@ -16,11 +16,11 @@ describe('Scoring Engine Extended (QA Tests)', () => {
     correct_goal_count: { points: 5 },
     exact_scorer_list: { points: 10 },
     first_goal_scorer: { points: 5 }
-  } as any
+  } as never
 
   it('ENGINE-001: Penality score correctly allocates points', () => {
-    const pred = { penalty_home: 5, penalty_away: 4, home_score: 1, away_score: 1 } as any
-    const actual = { penalty_home: 5, penalty_away: 4, home_score: 1, away_score: 1 } as any
+    const pred = { penalty_home: 5, penalty_away: 4, home_score: 1, away_score: 1 } as never
+    const actual = { penalty_home: 5, penalty_away: 4, home_score: 1, away_score: 1 } as never
     expect(calculatePenaltyScore(pred, actual, rules)).toBe(25) // Winner + Score
   })
 
@@ -36,14 +36,14 @@ describe('Scoring Engine Extended (QA Tests)', () => {
       xg_home: 1.5, xg_away: 1.0,
       yellow_home: 2, yellow_away: 2,
       red_home: 0, red_away: 0
-    } as any
+    } as never
     const actual = {
       possession_home: 50, possession_away: 50,
       shots_home: 11, shots_away: 9,
       xg_home: 1.6, xg_away: 1.1,
       yellow_home: 2, yellow_away: 2,
       red_home: 0, red_away: 0
-    } as any
+    } as never
     expect(calculateStatsScore(pred, actual, rules)).toBe(25) // All within tolerance
   })
 })

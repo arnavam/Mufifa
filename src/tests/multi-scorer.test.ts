@@ -65,7 +65,7 @@ describe('Multi-Scorer Validation', () => {
   const validMatches = [{ match_code: 'M_1', home_team: 'Team A', away_team: 'Team B' }]
 
   const runValidation = (scorers: string) => {
-    return validateCsv([{ ...baseRow, predicted_goal_scorers: scorers }] as any, validMatches)
+    return validateCsv([{ ...baseRow, predicted_goal_scorers: scorers }] as unknown as import("../types/predictions").CsvRow[], validMatches)
   }
 
   it('VALIDATOR-SCORER-001: Accepts valid formats', () => {

@@ -15,43 +15,43 @@ const mockRules: Record<string, ScoringRule> = {
 
 describe('Scoring Engine (Acceptance Tests)', () => {
   it('SCORE-001: Correct winner predicted', () => {
-    const pred = { winner: 'home' } as any
-    const actual = { winner: 'home' } as any
+    const pred = { winner: 'home' } as never
+    const actual = { winner: 'home' } as never
     const result = calculateOutcomeScore(pred, actual, mockRules)
     expect(result.points).toBe(20)
   })
 
   it('SCORE-002: Exact scoreline predicted', () => {
-    const pred = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as any
-    const actual = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as any
+    const pred = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as never
+    const actual = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as never
     const result = calculateScorelineScore(pred, actual, mockRules)
     expect(result).toBe(40)
   })
 
   it('SCORE-003: Correct goal difference predicted', () => {
-    const pred = { home_score: 2, away_score: 0, extra_time_home: null, extra_time_away: null } as any
-    const actual = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as any
+    const pred = { home_score: 2, away_score: 0, extra_time_home: null, extra_time_away: null } as never
+    const actual = { home_score: 3, away_score: 1, extra_time_home: null, extra_time_away: null } as never
     const result = calculateScorelineScore(pred, actual, mockRules)
     expect(result).toBe(15) // +2 diff
   })
 
   it('SCORE-013: Correct winner prediction with confidence >80%', () => {
-    const pred = { winner: 'home', confidence: 90 } as any
-    const actual = { winner: 'home' } as any
+    const pred = { winner: 'home', confidence: 90 } as never
+    const actual = { winner: 'home' } as never
     const result = calculateConfidenceScore(pred, actual, mockRules)
     expect(result).toBe(10)
   })
 
   it('SCORE-014: Incorrect winner prediction with confidence >80%', () => {
-    const pred = { winner: 'home', confidence: 90 } as any
-    const actual = { winner: 'away' } as any
+    const pred = { winner: 'home', confidence: 90 } as never
+    const actual = { winner: 'away' } as never
     const result = calculateConfidenceScore(pred, actual, mockRules)
     expect(result).toBe(-10)
   })
 
   it('SCORE-015: Stage multiplier applied', () => {
-    const pred = { winner: 'home', home_score: 1, away_score: 0, extra_time_home: null, extra_time_away: null, confidence: 50 } as any
-    const actual = { winner: 'home', home_score: 1, away_score: 0, extra_time_home: null, extra_time_away: null, penalty_home: null, penalty_away: null } as any
+    const pred = { winner: 'home', home_score: 1, away_score: 0, extra_time_home: null, extra_time_away: null, confidence: 50 } as never
+    const actual = { winner: 'home', home_score: 1, away_score: 0, extra_time_home: null, extra_time_away: null, penalty_home: null, penalty_away: null } as never
     const result = calculateMatchScore(pred, actual, mockRules, 2.0)
     // 20 (winner) + 40 (exact) = 60 * 2.0 = 120
     expect(result.multipliedTotal).toBe(120)

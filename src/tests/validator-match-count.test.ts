@@ -38,19 +38,19 @@ describe('Validator Match-Count Behavior', () => {
 
     // Provide 5 matches
     const rows5 = validMatches.map(m => ({ ...baseRow, match_id: m.match_code }))
-    const result5 = validateCsv(rows5 as any, validMatches)
+    const result5 = validateCsv(rows5 as unknown as import("../types/predictions").CsvRow[], validMatches)
     expect(result5.valid).toBe(true)
     expect(result5.predictions).toHaveLength(5)
 
     // Provide 4 matches (missing 1)
     const rows4 = rows5.slice(0, 4)
-    const result4 = validateCsv(rows4 as any, validMatches)
+    const result4 = validateCsv(rows4 as unknown as import("../types/predictions").CsvRow[], validMatches)
     expect(result4.valid).toBe(false)
     expect(result4.errors.some(e => e.message.includes('Missing predictions'))).toBe(true)
 
     // Provide 6 matches (1 extra)
     const rows6 = [...rows5, { ...baseRow, match_id: 'M_5' }]
-    const result6 = validateCsv(rows6 as any, validMatches)
+    const result6 = validateCsv(rows6 as unknown as import("../types/predictions").CsvRow[], validMatches)
     expect(result6.valid).toBe(false)
     expect(result6.errors.some(e => e.message.includes('Invalid match ID'))).toBe(true)
   })
@@ -63,7 +63,7 @@ describe('Validator Match-Count Behavior', () => {
     }))
 
     const rows = validMatches.map(m => ({ ...baseRow, match_id: m.match_code }))
-    const result = validateCsv(rows as any, validMatches)
+    const result = validateCsv(rows as unknown as import("../types/predictions").CsvRow[], validMatches)
     expect(result.valid).toBe(true)
     expect(result.predictions).toHaveLength(10)
   })
@@ -76,7 +76,7 @@ describe('Validator Match-Count Behavior', () => {
     }))
 
     const rows = validMatches.map(m => ({ ...baseRow, match_id: m.match_code }))
-    const result = validateCsv(rows as any, validMatches)
+    const result = validateCsv(rows as unknown as import("../types/predictions").CsvRow[], validMatches)
     expect(result.valid).toBe(true)
     expect(result.predictions).toHaveLength(32)
   })

@@ -12,8 +12,8 @@ describe('Template and Validator Compatibility', () => {
       home_team: 'HomeTeam',
       away_team: 'AwayTeam',
       kickoff_time: new Date().toISOString(),
-      stage: 'group_stage' as any,
-      status: 'scheduled' as any,
+      stage: 'group_stage' as unknown as import("../types/predictions").CsvRow[],
+      status: 'scheduled' as unknown as import("../types/predictions").CsvRow[],
       multiplier: 1,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -59,7 +59,7 @@ describe('Template and Validator Compatibility', () => {
       home_team: m.home_team,
       away_team: m.away_team
     }))
-    const result = validateCsv(filledRows as any, validMatchesInput)
+    const result = validateCsv(filledRows as unknown as import("../types/predictions").CsvRow[], validMatchesInput)
     
     // 6. Must PASS
     expect(result.valid).toBe(true)
