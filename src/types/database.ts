@@ -12,6 +12,11 @@ export interface Database {
           email: string;
           role: UserRole;
           is_active: boolean;
+          full_name: string | null;
+          phone_number: string | null;
+          college: string | null;
+          district: string | null;
+          mulearn_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -20,10 +25,20 @@ export interface Database {
           email: string;
           role?: UserRole;
           is_active?: boolean;
+          full_name?: string | null;
+          phone_number?: string | null;
+          college?: string | null;
+          district?: string | null;
+          mulearn_id?: string | null;
         };
         Update: {
           role?: UserRole;
           is_active?: boolean;
+          full_name?: string | null;
+          phone_number?: string | null;
+          college?: string | null;
+          district?: string | null;
+          mulearn_id?: string | null;
         };
       };
       teams: {

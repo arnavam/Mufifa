@@ -53,7 +53,7 @@ export function SubmissionClient({ initialData }: { initialData: any }) {
           toast.error("Validation failed. Please fix the errors and try again.")
         }
       } else if (result?.success) {
-        toast.success("Predictions submitted successfully! Your team is now locked in.")
+        toast.success("Predictions submitted successfully! You can update them any time before the deadline.")
         // Refresh page to get updated server state
         window.location.reload()
       }
@@ -102,13 +102,13 @@ export function SubmissionClient({ initialData }: { initialData: any }) {
             Create Your Team
           </CardTitle>
           <CardDescription>
-            You need to create a team name before submitting your predictions.
+            You need to create a nickname before submitting your predictions.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={handleCreateTeam} className="space-y-4 max-w-sm">
             <div className="space-y-2">
-              <Label htmlFor="team_name">Team Name</Label>
+              <Label htmlFor="team_name">Nickname</Label>
               <Input id="team_name" name="team_name" placeholder="e.g. The Data Wizards" required minLength={3} className="bg-background/50" />
             </div>
             <Button type="submit" disabled={isPending} className="bg-accent text-accent-foreground hover:bg-accent/90 neon-border-green">
@@ -121,13 +121,15 @@ export function SubmissionClient({ initialData }: { initialData: any }) {
   }
 
   const isLocked = initialData.team.submission_locked
+  const hasSubmitted = (initialData.predictionCount ?? 0) > 0
 
   return (
     <div className="space-y-6">
-      <SubmissionStatus 
-        isLocked={isLocked} 
-        lockedAt={initialData.submission?.locked_at} 
-        predictionCount={initialData.predictionCount} 
+      <SubmissionStatus
+        isLocked={isLocked}
+        lockedAt={initialData.submission?.locked_at}
+        predictionCount={initialData.predictionCount}
+        hasSubmitted={hasSubmitted}
       />
 
       {!isLocked && (
@@ -174,31 +176,31 @@ export function SubmissionClient({ initialData }: { initialData: any }) {
             {file && (!validationResult || validationResult.valid) && (
               <div className="flex justify-end pt-4">
                 <AlertDialog>
-                  <AlertDialogTrigger 
+                  <AlertDialogTrigger
                     render={
-                      <Button 
+                      <Button
                         className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_0_15px_rgba(34,197,94,0.3)]"
                         disabled={isPending}
                       />
                     }
                   >
-                    {isPending ? 'Processing...' : 'Validate & Lock Submission'}
+                    {isPending ? 'Processing...' : 'Validate & Submit'}
                   </AlertDialogTrigger>
                   <AlertDialogContent className="glass-panel border-accent/20">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogTitle>Submit your predictions?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action will validate your file and lock in your predictions. 
-                        <strong> You cannot upload another file after this.</strong>
+                        This will validate your file and save it as your current submission.
+                        <strong> You can re-upload to update it any time before the deadline.</strong>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
+                      <AlertDialogAction
                         onClick={handleValidateAndSubmit}
                         className="bg-accent text-accent-foreground hover:bg-accent/90"
                       >
-                        Yes, Submit & Lock
+                        Yes, Submit
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

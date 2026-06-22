@@ -39,7 +39,7 @@ export async function uploadSubmission(formData: FormData) {
     .single()
 
   if (!team) return { error: 'No team found. Please create a team first.' }
-  if (team.submission_locked) return { error: 'Your submission is already locked.' }
+  if (team.submission_locked) return { error: 'Your submission has been locked by an administrator.' }
 
   // Check global submission deadline
   const { data: settings } = await supabase
@@ -70,14 +70,16 @@ export async function uploadSubmission(formData: FormData) {
   const validationResult = validateCsv(rows, matches || [])
 
   if (!validationResult.valid) {
-    // Record failed submission attempt
-    await supabase.from('submissions').insert({
+    // Record failed submission attempt. submissions has UNIQUE(team_id), so
+    // upsert on team_id rather than insert (avoids duplicate-key errors across
+    // repeated upload attempts).
+    await supabase.from('submissions').upsert({
       team_id: team.id,
       file_path: 'failed_upload',
       file_name: file.name,
       is_valid: false,
       validation_errors: validationResult.errors,
-    })
+    }, { onConflict: 'team_id' })
     return { validationResult }
   }
 
@@ -199,7 +201,7 @@ export async function downloadTemplate() {
 
 export async function createTeam(formData: FormData) {
   const teamName = formData.get('team_name') as string
-  if (!teamName || teamName.length < 3) return { error: 'Team name must be at least 3 characters' }
+  if (!teamName || teamName.length < 3) return { error: 'Nickname must be at least 3 characters' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -218,7 +220,7 @@ export async function createTeam(formData: FormData) {
 
   if (error) {
     if (error.code === '23505') { // Unique violation
-      return { error: 'You already have a team or this team name is taken.' }
+      return { error: 'You already have a team or this nickname is taken.' }
     }
     return { error: error.message }
   }

@@ -14,7 +14,7 @@ export function EditTeamName({ initialName }: { initialName: string }) {
 
   const handleSave = async () => {
     if (name.length < 3) {
-      toast.error('Team name must be at least 3 characters')
+      toast.error('Nickname must be at least 3 characters')
       return
     }
     if (name === initialName) {
@@ -30,7 +30,7 @@ export function EditTeamName({ initialName }: { initialName: string }) {
       if (result?.error) {
         toast.error(result.error)
       } else {
-        toast.success('Team name updated')
+        toast.success('Nickname updated')
         setIsEditing(false)
       }
     })

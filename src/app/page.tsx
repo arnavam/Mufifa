@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,7 +19,7 @@ export default async function Home(props: { searchParams?: SearchParams }) {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   let team = null
   if (user) {
     const { data } = await supabase.from('teams').select('*').eq('owner_id', user.id).single()
@@ -32,24 +33,33 @@ export default async function Home(props: { searchParams?: SearchParams }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/20">
-      
+
       {/* 1. Hero Section */}
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/50 to-background pt-24 pb-32">
         <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02]" />
         <div className="container relative mx-auto px-4 max-w-6xl text-center space-y-8 z-10">
-          <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-sm transition-colors hover:bg-primary/20 cursor-default">
-            <Trophy className="mr-2 h-4 w-4" /> Build. Predict. Compete. Win.
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="group flex items-center gap-3 sm:gap-4 bg-background hover:bg-muted/50 pl-6 pr-4 sm:pl-8 sm:pr-5 py-2 sm:py-2.5 rounded-full border border-border shadow-sm transition-all duration-500 cursor-default">
+              <span className="text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase text-muted-foreground group-hover:text-foreground transition-colors pt-1">Powered by</span>
+              <div className="flex items-center transform group-hover:scale-105 transition-transform duration-500">
+                <Image src="/reflections-logo-dark-v2.png" alt="Reflections" width={360} height={80} priority className="hidden dark:block h-7 sm:h-9 w-auto drop-shadow-sm" />
+                <Image src="/reflections-logo-light-v2.png" alt="Reflections" width={360} height={80} priority className="block dark:hidden h-7 sm:h-9 w-auto drop-shadow-sm" />
+              </div>
+            </div>
+            <div className="inline-flex items-center rounded-full border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground shadow-sm backdrop-blur-sm cursor-default">
+              <Trophy className="mr-2 h-4 w-4 text-primary" /> Reflect on the Data. Predict the Future.
+            </div>
           </div>
-          
+
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl lg:text-8xl bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 drop-shadow-sm pb-2">
-            FIFA World Cup 2026 <br/>
-            <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">ML Prediction Challenge</span>
+            WC Reflected <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#6cbd45] to-[#a3e681]">2026 ML Challenge</span>
           </h1>
-          
+
           <p className="mx-auto max-w-3xl text-lg sm:text-xl text-muted-foreground leading-relaxed">
             Welcome to a competition where data scientists, machine learning enthusiasts, AI engineers, and football analysts compete to build the most accurate predictive model for the biggest sporting event in the world.
           </p>
-          
+
           <p className="mx-auto max-w-2xl font-medium text-foreground">
             Participants will develop machine learning models capable of predicting match outcomes and tournament events. The most accurate models rise to the top of the leaderboard.
           </p>
@@ -57,10 +67,10 @@ export default async function Home(props: { searchParams?: SearchParams }) {
           <div className="pt-8">
             <h3 className="text-xl font-bold mb-6 flex items-center justify-center gap-2">
               <Activity className="w-5 h-5 text-primary animate-pulse" />
-              {isClosed 
-                ? "Submissions Closed: The tournament is officially underway." 
-                : settings?.submission_deadline 
-                  ? `Submission Deadline: ${new Date(settings.submission_deadline).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}` 
+              {isClosed
+                ? "Submissions Closed: The tournament is officially underway."
+                : settings?.submission_deadline
+                  ? `Submission Deadline: ${new Date(settings.submission_deadline).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`
                   : "Competition Starts Soon: Predict the future of football."}
             </h3>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -105,9 +115,9 @@ export default async function Home(props: { searchParams?: SearchParams }) {
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Organized as part of the <span className="font-semibold text-foreground">MuLearn Hackathon ecosystem</span>. Unlike traditional fantasy leagues, this competition evaluates the performance of machine learning models using a structured scoring framework designed to reward both accuracy and statistical insight.
             </p>
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mt-8 max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-sm">
+            <div className="bg-background border border-border rounded-xl p-6 mt-8 max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-left shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="bg-primary/10 p-3 rounded-full shrink-0">
+                <div className="bg-muted p-3 rounded-full shrink-0">
                   <BrainCircuit className="w-6 h-6 text-primary" />
                 </div>
                 <div>
@@ -317,7 +327,7 @@ export default async function Home(props: { searchParams?: SearchParams }) {
             <h2 className="text-4xl font-bold tracking-tight">Leaderboard & Analytics</h2>
             <p className="mt-4 text-lg text-muted-foreground">Real-time insights provided throughout the tournament.</p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-8">
             <Card className="border-border hover:border-primary/30 transition-colors">
               <CardHeader>
@@ -409,7 +419,7 @@ export default async function Home(props: { searchParams?: SearchParams }) {
               <p className="text-muted-foreground mb-8">
                 Whether you&apos;re building your first predictive model or operating a sophisticated ML pipeline, this challenge provides a unique opportunity to test your skills on a global sporting event.
               </p>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 {['Data Scientists', 'ML Engineers', 'AI Enthusiasts', 'Football Analysts', 'Students', 'Researchers', 'Sports Analytics Pros'].map((role) => (
                   <div key={role} className="flex items-center gap-3 bg-background border border-border p-4 rounded-lg">
@@ -495,7 +505,7 @@ export default async function Home(props: { searchParams?: SearchParams }) {
       {/* 11 & 12. Contact & Final CTA */}
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 max-w-5xl text-center space-y-12">
-          
+
           <div className="max-w-3xl mx-auto space-y-6">
             <h2 className="text-4xl font-extrabold tracking-tight">Ready to build the most accurate prediction model?</h2>
             <p className="text-xl opacity-90 leading-relaxed">
@@ -535,6 +545,21 @@ export default async function Home(props: { searchParams?: SearchParams }) {
               <Phone className="w-4 h-4" /> +91 9496392272
             </Badge>
             <p className="text-sm font-medium opacity-70 mt-4">Organized as part of the MuLearn Hackathon ecosystem.</p>
+
+            <div className="pt-12 flex flex-col items-center space-y-6">
+              <p className="text-sm font-bold opacity-80 uppercase tracking-widest text-primary-foreground">In Partnership With</p>
+              <div className="flex items-center gap-8 bg-background p-6 rounded-2xl border border-border shadow-sm">
+                {/* MuLearn Logo */}
+                <div className="flex items-center justify-center bg-white rounded-lg p-2 h-20 w-[140px] overflow-hidden relative">
+                  <Image src="/mulearn-logo.png" alt="MuLearn" fill sizes="140px" className="object-contain p-2" />
+                </div>
+                <div className="h-12 w-px bg-border"></div>
+                {/* Provided Partner Logo */}
+                <div className="flex items-center justify-center bg-white rounded-lg p-2 h-20 w-[140px] overflow-hidden relative">
+                  <Image src="/partner-logo.jpeg" alt="Partner" fill sizes="140px" className="object-contain p-2" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

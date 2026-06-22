@@ -55,13 +55,13 @@ describe('CSV Upload Smoke Test', () => {
     }))
 
     // 4. Validate
-    const validMatchRefs = matches.map((m: any) => ({
+    const validMatchRefs = matches.map((m: { match_code: string; home_team: string; away_team: string; id: string }) => ({
       match_code: m.match_code,
       home_team: m.home_team,
       away_team: m.away_team
     }))
     
-    const validationResult = validateCsv(filledRows as any, validMatchRefs)
+    const validationResult = validateCsv(filledRows as unknown as import("../types/predictions").CsvRow[], validMatchRefs)
     expect(validationResult.valid).toBe(true)
     expect(validationResult.errors).toHaveLength(0)
 

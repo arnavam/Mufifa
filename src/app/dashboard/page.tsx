@@ -52,6 +52,18 @@ export default async function DashboardPage() {
   const { data: settings } = await supabase.from('competition_settings').select('submission_deadline').single()
   const isClosed = settings?.submission_deadline ? new Date() > new Date(settings.submission_deadline) : false
 
+  const { count: teamPredictionCount } = await supabase
+    .from('predictions')
+    .select('*', { count: 'exact', head: true })
+    .eq('team_id', team.id)
+  const hasSubmitted = (teamPredictionCount || 0) > 0
+
+  const submissionState: 'pending' | 'submitted' | 'closed' | 'locked' =
+    team.submission_locked ? 'locked' :
+    isClosed ? 'closed' :
+    hasSubmitted ? 'submitted' :
+    'pending'
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -79,10 +91,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <StatsCards 
+      <StatsCards
         totalScore={leaderboard?.total_score || 0}
         accuracy={leaderboard?.accuracy_percentage || 0}
-        predictionsLocked={team.submission_locked}
+        submissionState={submissionState}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

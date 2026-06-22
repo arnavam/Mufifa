@@ -46,6 +46,9 @@ const registerSchema = z.object({
   phone_number: z.string().refine((val) => val && isValidPhoneNumber(val), { message: 'Valid international phone number is required.' }),
   college: z.string().min(2, { message: 'College/Organization name is required.' }),
   district: z.string().min(1, { message: 'Please select a district.' }),
+  mulearn_id: z.string()
+    .min(1, { message: 'muLearn ID is required.' })
+    .endsWith('@mulearn', { message: 'muLearn ID must end with "@mulearn".' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
   confirmPassword: z.string()
@@ -65,6 +68,7 @@ export function RegisterForm() {
       phone_number: '',
       college: '',
       district: '',
+      mulearn_id: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -80,7 +84,8 @@ export function RegisterForm() {
       formData.append('phone_number', values.phone_number)
       formData.append('college', values.college)
       formData.append('district', values.district)
-      
+      formData.append('mulearn_id', values.mulearn_id)
+
       const result = await signUp(formData)
       if (result?.error) {
         toast.error(result.error)
@@ -199,20 +204,35 @@ export function RegisterForm() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="name@example.com" {...field} className="bg-background/50" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="name@example.com" {...field} className="bg-background/50" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mulearn_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>muLearn ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="yourname@mulearn" {...field} className="bg-background/50" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

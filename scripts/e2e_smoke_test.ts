@@ -14,8 +14,8 @@ async function runTest() {
   console.log('=================================')
 
   console.log('1. Creating 3 isolated test users & teams...')
-  const users: any[] = []
-  const teams: any[] = []
+  const users: unknown[] = []
+  const teams: unknown[] = []
   for (let i = 1; i <= 3; i++) {
     const email = `smoke_test_${i}_${Date.now()}@example.com`
     const { data: user, error } = await supabase.auth.admin.createUser({
@@ -43,7 +43,7 @@ async function runTest() {
   const { data: matches } = await supabase.from('matches').select('*').order('kickoff_time')
   if (!matches || matches.length === 0) throw new Error('Matches not seeded')
   const templateCsv = generateTemplate(matches)
-  const matchMap = new Map(matches.map((m: any) => [m.match_code, m.id]))
+  const matchMap = new Map(matches.map((m: unknown) => [m.match_code, m.id]))
 
   for (let i = 0; i < 3; i++) {
     const team = teams[i]
@@ -53,7 +53,7 @@ async function runTest() {
 
     const firstMatchCode = matches[0].match_code
     
-    parsed.forEach((p: any) => {
+    parsed.forEach((p: unknown) => {
       p.predicted_winner = p.home_team
       p.predicted_home_score = "1"
       p.predicted_away_score = "0"
@@ -71,7 +71,7 @@ async function runTest() {
       p.tournament_champion = "Brazil"
     })
 
-    const gs001 = parsed.find((p: any) => p.match_id === firstMatchCode)
+    const gs001 = parsed.find((p: unknown) => p.match_id === firstMatchCode)
     if (!gs001) throw new Error(`Template did not contain ${firstMatchCode}`)
     
     if (i === 0) {
@@ -88,7 +88,7 @@ async function runTest() {
     const validationResult = validateCsv(parsed, matches)
     if (!validationResult.valid) throw new Error(JSON.stringify(validationResult.errors))
     
-    const payload = validationResult.predictions.map((p: any) => ({
+    const payload = validationResult.predictions.map((p: unknown) => ({
       ...p,
       match_id: matchMap.get(p.match_id)!
     }))
@@ -143,13 +143,13 @@ async function runTest() {
 
   if (!lb) throw new Error('Leaderboard is null')
 
-  lb.forEach((l: any, index: number) => {
-    console.log(`   -> Rank ${l.rank} (Global) | Score: ${l.total_score} | Team: ${(l.teams as any).team_name}`)
+  lb.forEach((l: unknown, index: number) => {
+    console.log(`   -> Rank ${l.rank} (Global) | Score: ${l.total_score} | Team: ${(l.teams as unknown as import("../types/predictions").CsvRow[]).team_name}`)
   })
 
-  const p1 = lb.find((l: any) => l.team_id === teams[0].id)
-  const p2 = lb.find((l: any) => l.team_id === teams[1].id)
-  const p3 = lb.find((l: any) => l.team_id === teams[2].id)
+  const p1 = lb.find((l: unknown) => l.team_id === teams[0].id)
+  const p2 = lb.find((l: unknown) => l.team_id === teams[1].id)
+  const p3 = lb.find((l: unknown) => l.team_id === teams[2].id)
 
   if (!p1 || !p2 || !p3) throw new Error('Missing leaderboard entry')
 

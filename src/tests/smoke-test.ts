@@ -61,7 +61,7 @@ async function runSmokeTest() {
     away_team: m.away_team
   }))
   
-  const validationResult = validateCsv(filledRows as any, validMatchRefs)
+  const validationResult = validateCsv(filledRows as unknown as import("../types/predictions").CsvRow[], validMatchRefs)
   
   if (!validationResult.valid) {
     console.error('FAIL: Validator did not pass', validationResult.errors)

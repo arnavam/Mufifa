@@ -115,29 +115,31 @@ export function calculateScorerScore(prediction: Prediction, actual: Actual, rul
 export function calculateStatsScore(prediction: Prediction, actual: Actual, rules: Record<string, ScoringRule>) {
   let points = 0
 
+  const safeDiff = (a: number, b: number) => Number(Math.abs(a - b).toFixed(4))
+
   if (prediction.possession_home !== null && actual.possession_home !== null) {
-    if (Math.abs(prediction.possession_home - actual.possession_home) <= SCORING_TOLERANCES.possession) {
+    if (safeDiff(prediction.possession_home, actual.possession_home) <= SCORING_TOLERANCES.possession) {
       points += rules['possession_accuracy']?.points || 0
     }
   }
 
   if (prediction.shots_home !== null && actual.shots_home !== null && prediction.shots_away !== null && actual.shots_away !== null) {
-    if (Math.abs(prediction.shots_home - actual.shots_home) <= SCORING_TOLERANCES.shots &&
-        Math.abs(prediction.shots_away - actual.shots_away) <= SCORING_TOLERANCES.shots) {
+    if (safeDiff(prediction.shots_home, actual.shots_home) <= SCORING_TOLERANCES.shots &&
+        safeDiff(prediction.shots_away, actual.shots_away) <= SCORING_TOLERANCES.shots) {
       points += rules['shots_accuracy']?.points || 0
     }
   }
 
   if (prediction.xg_home !== null && actual.xg_home !== null && prediction.xg_away !== null && actual.xg_away !== null) {
-    if (Math.abs(prediction.xg_home - actual.xg_home) <= SCORING_TOLERANCES.xg &&
-        Math.abs(prediction.xg_away - actual.xg_away) <= SCORING_TOLERANCES.xg) {
+    if (safeDiff(prediction.xg_home, actual.xg_home) <= SCORING_TOLERANCES.xg &&
+        safeDiff(prediction.xg_away, actual.xg_away) <= SCORING_TOLERANCES.xg) {
       points += rules['xg_accuracy']?.points || 0
     }
   }
 
   if (prediction.yellow_home !== null && actual.yellow_home !== null && prediction.yellow_away !== null && actual.yellow_away !== null) {
-    if (Math.abs(prediction.yellow_home - actual.yellow_home) <= SCORING_TOLERANCES.yellowCards &&
-        Math.abs(prediction.yellow_away - actual.yellow_away) <= SCORING_TOLERANCES.yellowCards) {
+    if (safeDiff(prediction.yellow_home, actual.yellow_home) <= SCORING_TOLERANCES.yellowCards &&
+        safeDiff(prediction.yellow_away, actual.yellow_away) <= SCORING_TOLERANCES.yellowCards) {
       points += rules['yellow_cards_accuracy']?.points || 0
     }
   }
@@ -226,6 +228,33 @@ export function calculateMaxPossibleScore(rules: Record<string, ScoringRule>, mu
 }
 
 export function calculateMatchScore(prediction: Prediction, actual: Actual, rules: Record<string, ScoringRule>, multiplier: number): MatchScoreResult {
+  const predictedWinner = normalizeOutcome(prediction.winner, actual)
+  
+  // BRACKET BUST CHECK:
+  // If the predicted winner is a string that did not normalize to 'home', 'away', or 'draw',
+  // it means they predicted a specific team that is NOT playing in this actual match.
+  const isBracketBust = predictedWinner !== null && 
+                        predictedWinner !== 'home' && 
+                        predictedWinner !== 'away' && 
+                        predictedWinner !== 'draw'
+
+  if (isBracketBust) {
+    return {
+      total: 0,
+      multipliedTotal: 0,
+      breakdown: {
+        outcome: 0,
+        scoreline: 0,
+        scorer: 0,
+        stats: 0,
+        penalty: 0,
+        confidence: 0
+      },
+      multiplier,
+      maxPossible: calculateMaxPossibleScore(rules, multiplier, actual)
+    }
+  }
+
   const outcome = calculateOutcomeScore(prediction, actual, rules).points
   const scoreline = calculateScorelineScore(prediction, actual, rules)
   const scorer = calculateScorerScore(prediction, actual, rules)
