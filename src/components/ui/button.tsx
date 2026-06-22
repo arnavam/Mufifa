@@ -61,7 +61,7 @@ function Button({
       <Slot
         data-slot="button"
         className={cn(buttonVariants({ variant, size, className }))}
-        {...(props as unknown)}
+        {...(props as Record<string, unknown>)}
       />
     )
   }

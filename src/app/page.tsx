@@ -42,8 +42,8 @@ export default async function Home(props: { searchParams?: SearchParams }) {
             <div className="group flex items-center gap-3 sm:gap-4 bg-background hover:bg-muted/50 pl-6 pr-4 sm:pl-8 sm:pr-5 py-2 sm:py-2.5 rounded-full border border-border shadow-sm transition-all duration-500 cursor-default">
               <span className="text-[10px] sm:text-xs font-bold tracking-[0.25em] uppercase text-muted-foreground group-hover:text-foreground transition-colors pt-1">Powered by</span>
               <div className="flex items-center transform group-hover:scale-105 transition-transform duration-500">
-                <Image src="/reflections-logo-dark.png" alt="Reflections" width={320} height={80} className="hidden dark:block h-10 sm:h-14 w-auto drop-shadow-sm" />
-                <Image src="/reflections-logo-light.png" alt="Reflections" width={320} height={80} className="block dark:hidden h-10 sm:h-14 w-auto drop-shadow-sm" />
+                <Image src="/reflections-logo-dark-v2.png" alt="Reflections" width={360} height={80} priority className="hidden dark:block h-7 sm:h-9 w-auto drop-shadow-sm" />
+                <Image src="/reflections-logo-light-v2.png" alt="Reflections" width={360} height={80} priority className="block dark:hidden h-7 sm:h-9 w-auto drop-shadow-sm" />
               </div>
             </div>
             <div className="inline-flex items-center rounded-full border border-border bg-background px-4 py-1.5 text-sm font-medium text-foreground shadow-sm backdrop-blur-sm cursor-default">
@@ -551,12 +551,12 @@ export default async function Home(props: { searchParams?: SearchParams }) {
               <div className="flex items-center gap-8 bg-background p-6 rounded-2xl border border-border shadow-sm">
                 {/* MuLearn Logo */}
                 <div className="flex items-center justify-center bg-white rounded-lg p-2 h-20 w-[140px] overflow-hidden relative">
-                  <Image src="/mulearn-logo.png" alt="MuLearn" fill className="object-contain p-2" />
+                  <Image src="/mulearn-logo.png" alt="MuLearn" fill sizes="140px" className="object-contain p-2" />
                 </div>
                 <div className="h-12 w-px bg-border"></div>
                 {/* Provided Partner Logo */}
                 <div className="flex items-center justify-center bg-white rounded-lg p-2 h-20 w-[140px] overflow-hidden relative">
-                  <Image src="/partner-logo.jpeg" alt="Partner" fill className="object-contain p-2" />
+                  <Image src="/partner-logo.jpeg" alt="Partner" fill sizes="140px" className="object-contain p-2" />
                 </div>
               </div>
             </div>

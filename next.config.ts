@@ -46,8 +46,10 @@ export default withSentryConfig(nextConfig, {
   project: "mufifa-app",
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  reactComponentAnnotation: { enabled: true },
   tunnelRoute: "/monitoring",
-  disableLogger: true,
-  automaticVercelMonitors: true,
+  webpack: {
+    reactComponentAnnotation: { enabled: true },
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: true,
+  },
 });
